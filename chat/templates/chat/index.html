@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="csrf-token" content="{{ csrf_token }}">
+    <title>Chat</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/jetbrains-mono@1.0.6/css/jetbrains-mono.min.css">
+    {% load static %}
+    <link rel="stylesheet" href="{% static 'chat/css/styles.css' %}">
+    <script src="{% static 'chat/js/app.js' %}"></script>
+</head>
+<body>
+    <div class="modal-overlay" id="modalOverlay"></div>
+    <div class="wrapper">
+        <div class="auth-modal">
+            <h1>Авторизация</h1>
+            <input type="text" name="username" id="username_auth" placeholder="Введите логин">
+            <input type="password" name="password" id="password_auth" placeholder="Введите пароль">
+            <div class="error-auth" id="errorAuth"></div>
+            <div class="button">
+                <button class="btn" id="authBtn">Войти</button>
+                <a class="register-link" id="openRegBtn">Нет аккаунта? Зарегистрироваться</a>
+            </div>
+
+        </div>
+
+        <div class="reg-modal">
+            <button class="close-btn" id="backBtn">&#10006;</button>
+            <h1>Регистрация</h1>
+            <input type="text" name="username" id="username_reg" placeholder="Введите логин">
+            <input type="password" name="password" id="password_reg" placeholder="Введите пароль">
+            <input type="password" name="confirm-password" id="second_password_reg" placeholder="Подтвердите пароль">
+            <div id="reg-error" style="color: red; display: none; margin: 5px;"></div>
+            <div class="button">
+                <button class="btn" id="regBtn">Зарегистрироваться</button>
+            </div>
+        </div>
+
+        <div class="profile-modal">
+            <button class="profile-modal__close-btn" id="backBtn">&#10006;</button>
+            <h1 class="profile-modal__title">Настройки профиля</h1>
+
+            <div class="profile-modal__avatar-section">
+                <img src="user.png" class="profile-modal__avatar-img" id="avatarImg" alt="Аватар пользователя" style="cursor:pointer;">
+                <input type="file" id="avatarInput" accept="image/*" style="display: none;">
+                <span class="profile-modal__username" id="profileMainUsername"></span>
+                <span class="profile-modal__status-online">В сети</span>
+<!--                <span class="profile-modal__status-offline">Не в сети</span>-->
+            </div>
+
+            <div class="profile-modal__info-section">
+                <div class="profile-modal__info-item">
+                    <input class="profile-modal__info-value" id="profileUsername" value="" type="text"></input>
+                    <span class="profile-modal__info-label">Имя пользователя</span>
+                </div>
+
+                <div class="profile-modal__info-item">
+                    <input class="profile-modal__info-value" id="profileFullname" value="" type="text"></input>
+                    <span class="profile-modal__info-label">ФИО</span>
+                </div>
+
+                <div class="profile-modal__info-item">
+                    <input class="profile-modal__info-value" id="profileBio" value="" type="text"></input>
+                    <span class="profile-modal__info-label">Описание</span>
+                </div>
+            </div>
+            <button class="profile-modal__logout-btn" id="saveProfile">Сохранить изменения</button>
+            <button class="profile-modal__logout-btn" id="logoutBtn">Выйти</button>
+        </div>
+
+        <!-- Chat App -->
+        <div class="chat-app">
+            <!-- Sidebar -->
+            <div class="sidebar">
+                <div class="sidebar-header">
+                    <button class="menu-btn" id="menuBtn">☰</button>
+                    <div class="search-container">
+                        <input type="text" class="search-input" placeholder="Поиск...">
+                        <span class="search-icon">⌕</span>
+                    </div>
+                </div>
+
+                <div class="chats-list" id="chatsList">
+                    <!-- Chat items will be added here dynamically -->
+                </div>
+            </div>
+
+            <!-- Main Chat Area -->
+            <div class="main-chat">
+                <div class="msg-header">
+                    <div class="container1">
+                        <img src="" class="msgimg" id="companionAvatarImg">
+                        <div class="active">
+                            <p class="title-name" id="companionName"></p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="chat-page">
+                    <div class="msg-inbox">
+                        <div class="chats">
+                            <div class="msg-page" id="msgPage">
+                                <p>Выберите чат</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="msg-bottom">
+                    <div class="input-group">
+                        <input type="text" class="form-control" placeholder="Введите сообщение...">
+                        <span class="input-group-text send-icon">➤</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>
