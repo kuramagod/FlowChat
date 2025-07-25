@@ -49,7 +49,8 @@ document.addEventListener('DOMContentLoaded', async function () {
     const companionAvatarImg = document.getElementById("companionAvatarImg");
     const companionName = document.getElementById("companionName");
     const profileUsername = document.getElementById("profileUsername");
-    const profileFullname = document.getElementById("profileFullname");
+    const profileFirstName = document.getElementById("profileFirstName");
+    const profileLastName = document.getElementById("profileLastName");
     const profileMainUsername = document.getElementById("profileMainUsername");
     const profileBio = document.getElementById("profileBio");
     const saveProfile = document.getElementById("saveProfile");
@@ -168,12 +169,15 @@ document.addEventListener('DOMContentLoaded', async function () {
         profileModal.classList.toggle('active');
         profileMainUsername.innerHTML = `${user.username}`
         profileUsername.value = `${user.username}`
-        profileFullname.value = `${user.first_name} ${user.last_name}`
+        profileFirstName.value = `${user.first_name}`
+        profileLastName.value = `${user.last_name}`
         profileBio.value = `${user.bio}`
     });
 
     saveProfile.addEventListener('click', async () => {
         const username = document.querySelector('#profileUsername').value;
+        const first_name = document.querySelector('#profileFirstName').value;
+        const last_name = document.querySelector('#profileLastName').value;
         const bio = document.querySelector('#profileBio').value;
 
         response = await fetch(`/api/users/${userId}/`, {
@@ -183,13 +187,14 @@ document.addEventListener('DOMContentLoaded', async function () {
                 'Content-Type': 'application/json',
             },
             credentials: 'include',
-            body: JSON.stringify({ username, bio })
+            body: JSON.stringify({ username, first_name, last_name, bio })
         });
 
         if (response.ok) {
             window.location.reload();
         } else {
-
+            const data = await response.json();
+            alert(`${data.username[0]}`);
         }
     });
 

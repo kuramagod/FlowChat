@@ -42,7 +42,7 @@
             <h1 class="profile-modal__title">Настройки профиля</h1>
 
             <div class="profile-modal__avatar-section">
-                <img src="user.png" class="profile-modal__avatar-img" id="avatarImg" alt="Аватар пользователя" style="cursor:pointer;">
+                <img src="" class="profile-modal__avatar-img" id="avatarImg" alt="Аватар пользователя" style="cursor:pointer;">
                 <input type="file" id="avatarInput" accept="image/*" style="display: none;">
                 <span class="profile-modal__username" id="profileMainUsername"></span>
                 <span class="profile-modal__status-online">В сети</span>
@@ -56,8 +56,13 @@
                 </div>
 
                 <div class="profile-modal__info-item">
-                    <input class="profile-modal__info-value" id="profileFullname" value="" type="text"></input>
-                    <span class="profile-modal__info-label">ФИО</span>
+                    <input class="profile-modal__info-value" id="profileFirstName" value="" type="text"></input>
+                    <span class="profile-modal__info-label">Имя</span>
+                </div>
+
+                <div class="profile-modal__info-item">
+                    <input class="profile-modal__info-value" id="profileLastName" value="" type="text"></input>
+                    <span class="profile-modal__info-label">Фамилия</span>
                 </div>
 
                 <div class="profile-modal__info-item">
