@@ -53,6 +53,9 @@ document.addEventListener('DOMContentLoaded', async function () {
     const profileMainUsername = document.getElementById("profileMainUsername");
     const profileBio = document.getElementById("profileBio");
     const saveProfile = document.getElementById("saveProfile");
+    const msgHeader = document.querySelector(".msg-header");
+    const msgBottom = document.querySelector(".msg-bottom");
+    const selector = document.querySelector(".selector");
 
     // Функция проверки авторизации пользователя
     async function checkAuth() {
@@ -94,6 +97,7 @@ document.addEventListener('DOMContentLoaded', async function () {
         }
     });
 
+    // Обработка выхода из аккаунта
     logoutBtn.addEventListener('click', async ()=> {
         response = await fetch(`/api-auth/logout/`, {
             method: "POST",
@@ -195,7 +199,7 @@ document.addEventListener('DOMContentLoaded', async function () {
         });
     }
 
-    // Клик по картинке — открываем выбор файла
+    // Открытие выбора файла
     avatarImg.addEventListener("click", () => {
         avatarInput.click();
     });
@@ -215,7 +219,7 @@ document.addEventListener('DOMContentLoaded', async function () {
                     'X-CSRFToken': csrfToken,
                 },
                 body: formData,
-                credentials: "include", // обязательно для cookie-based сессии
+                credentials: "include",
             });
 
             if (!response.ok) {
@@ -279,6 +283,9 @@ document.addEventListener('DOMContentLoaded', async function () {
 
         // Добавляем класс active к выбранному элементу
         clickedItem.classList.add('active');
+        msgHeader.style.display = "flex";
+        msgBottom.style.display = "flex";
+        selector.style.display = "none";
 
         // Получаем ID чата
         const chatId = clickedItem.dataset.id;

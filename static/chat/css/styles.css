@@ -281,7 +281,7 @@ input:focus {
     border-bottom: 1px solid #ddd;
     width: 100%;
     height: 90px;
-    display: flex;
+    display: none;
     align-items: center;
     background-color: #efefef;
     padding: 0 20px;
@@ -308,6 +308,35 @@ input:focus {
 }
 
 /* Chat messages area */
+.selector {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 100%;
+    width: 100%;
+    top: 0;
+    left: 0;
+    background-color: #fff;
+    z-index: 1;
+}
+
+.selector p {
+    font-size: 24px;
+    color: black;
+    padding: 10px 20px;
+    border: 2px solid #efefef;
+    border-radius: 10px;
+    background-color: #efefef;
+    text-align: center;
+    max-width: 80%;
+    margin: 0 auto;
+}
+
+.selector p::before {
+    content: "💬";
+    margin-right: 10px;
+}
+
 .chat-page {
     flex: 1;
     display: flex;
@@ -441,6 +470,7 @@ input:focus {
 
 /* Message input */
 .msg-bottom {
+    display: none;
     padding: 15px 20px;
     border-top: 1px solid #ddd;
     background-color: #efefef;
