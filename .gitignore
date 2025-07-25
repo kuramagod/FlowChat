@@ -1,0 +1,15 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+dist/
+build/
+
+# PyCharm
+.idea/
+
+# Виртуальное окружение
+../venv/
+
+# Файлы переменных окружения
+*.env
