@@ -11,6 +11,7 @@
     <script src="{% static 'chat/js/app.js' %}"></script>
 </head>
 <body>
+    <ul class="notifications"></ul>
     <div class="modal-overlay" id="modalOverlay"></div>
     <div class="wrapper">
         <div class="auth-modal">
@@ -116,8 +117,8 @@
 
                 <div class="msg-bottom">
                     <div class="input-group">
-                        <input type="text" class="form-control" placeholder="Введите сообщение...">
-                        <span class="input-group-text send-icon">➤</span>
+                        <input type="text" class="chat-message-input" placeholder="Введите сообщение...">
+                        <span class="chat-message-submit send-icon">➤</span>
                     </div>
                 </div>
             </div>

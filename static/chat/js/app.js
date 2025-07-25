@@ -24,6 +24,73 @@ function formatTime(isoString) {
     return `${hours}:${minutes}`;
 }
 
+function renderMessage({ author, text, created_at, author_avatar }, user, isCurrentUser, chatAvatar, chatTitle) {
+    const time = formatTime(created_at);
+    const avatar = isCurrentUser ? user.avatar : author_avatar;
+
+    let html = '';
+
+    if (isCurrentUser) {
+        html = `
+            <div class="outgoing-chats">
+                <div class="outgoing-chats-img">
+                    <img src="${avatar}">
+                </div>
+                <div class="outgoing-chats-msg">
+                    <p>${text}</p>
+                    <span class="time">${time}</span>
+                </div>
+            </div>
+        `;
+    } else {
+        companionAvatarImg.src = chatAvatar;
+        companionName.innerHTML = `<p>${chatTitle}</p>`;
+        html = `
+            <div class="received-chats">
+                <div class="received-chats-img">
+                    <img src="${avatar}">
+                </div>
+                <div class="received-msg-inbox">
+                    <p>${text}</p>
+                    <span class="time">${time}</span>
+                </div>
+            </div>
+        `;
+    }
+
+    msgPage.insertAdjacentHTML("beforeend", html);
+}
+
+function showNotification(type, message) {
+    const notifications = document.querySelector(".notifications");
+    const toast = document.createElement("li");
+
+    toast.className = `toast ${type}`;
+    toast.innerHTML = `
+        <div class="column">
+            <span style="font-size: 1.5em; margin-right: 10px;">
+                ${type === 'success' ? '✓' : '✗'}
+            </span>
+            <span>${message}</span>
+        </div>
+        <span style="font-size: 1.5em; cursor: pointer;" onclick="removeToast(this.parentElement)">×</span>
+    `;
+
+    notifications.appendChild(toast);
+
+    const timeoutId = setTimeout(() => {
+        removeToast(toast);
+    }, 5000);
+
+    toast.timeoutId = timeoutId;
+}
+
+function removeToast(toast) {
+    toast.classList.add("hide");
+    if (toast.timeoutId) clearTimeout(toast.timeoutId);
+    setTimeout(() => toast.remove(), 500);
+}
+
 
 document.addEventListener('DOMContentLoaded', async function () {
     const user = await get_user();
@@ -57,6 +124,8 @@ document.addEventListener('DOMContentLoaded', async function () {
     const msgHeader = document.querySelector(".msg-header");
     const msgBottom = document.querySelector(".msg-bottom");
     const selector = document.querySelector(".selector");
+    const inputMessage = document.querySelector('.chat-message-input');
+    const messageSubmit = document.querySelector('.chat-message-submit');
 
     // Функция проверки авторизации пользователя
     async function checkAuth() {
@@ -192,9 +261,10 @@ document.addEventListener('DOMContentLoaded', async function () {
 
         if (response.ok) {
             window.location.reload();
+            showNotification('success', 'Профиль успешно сохранен!');
         } else {
             const data = await response.json();
-            alert(`${data.username[0]}`);
+            showNotification('error', `Ошибка сохранения профиля: ${data.username[0]}`);
         }
     });
 
@@ -309,44 +379,55 @@ document.addEventListener('DOMContentLoaded', async function () {
         msgPage.innerHTML = "";
 
         const messages = await response.json();
-//        console.log(messages);
         messages.forEach(message => {
-            const authorId = message.author.id
-            const userAvatar = user.avatar
-            const authorAvatar = message.author.avatar
-            const text = message.text
-            const time = formatTime(message.created_at)
-            let msgPageHTML = ``
-            if (userId == authorId) {
-            msgPageHTML = `
-                <div class="outgoing-chats">
-                    <div class="outgoing-chats-img">
-                        <img src="${userAvatar}">
-                    </div>
-                    <div class="outgoing-chats-msg">
-                        <p>${text}</p>
-                        <span class="time">${time}</span>
-                    </div>
-                </div>
-            `
-            } else {
-            companionAvatarImg.src = chatAvatar;
-            companionName.innerHTML = `<p>${chatTitle}</p>`;
-            msgPageHTML = `
-                <div class="received-chats">
-                    <div class="received-chats-img">
-                        <img src="${authorAvatar}">
-                    </div>
-                    <div class="received-msg-inbox">
-                        <p>${text}</p>
-                        <span class="time">${time}</span>
-                    </div>
-                </div>
-            `
-            }
-            msgPage.insertAdjacentHTML("beforeend", msgPageHTML);
+            const isCurrentUser = userId == message.author.id;
+            renderMessage({
+                author: message.author,
+                text: message.text,
+                created_at: message.created_at,
+                author_avatar: message.author.avatar
+            }, user, isCurrentUser, chatAvatar, chatTitle);
+        });
 
-        })
+        const chatSocket = new WebSocket(
+             'ws://'
+            + window.location.host
+            + '/ws/chat/'
+            + chatId
+            + '/'
+        );
+
+        chatSocket.onmessage = function(e) {
+            const data = JSON.parse(e.data);
+            const isCurrentUser = userId == data.author_id;
+
+            renderMessage({
+                author: { id: data.author_id },
+                text: data.text,
+                created_at: data.time,
+                author_avatar: data.author_avatar
+            }, user, isCurrentUser, chatAvatar, chatTitle);
+        };
+
+        chatSocket.onclose = function(e) {
+            console.error('Чат сокет закрыт!')
+        };
+
+        inputMessage.focus();
+        inputMessage.onkeyup = function(e) {
+            if (e.key === 'Enter') {  // enter, return
+                messageSubmit.click();
+            }
+        };
+
+        messageSubmit.onclick = function(e) {
+            const messageInputDom = document.querySelector('.chat-message-input');
+            const text = messageInputDom.value;
+            chatSocket.send(JSON.stringify({
+                'text': text
+            }));
+            messageInputDom.value = '';
+        };
 
     });
 

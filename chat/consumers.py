@@ -1,11 +1,15 @@
 import json
 
+from channels.db import database_sync_to_async
 from channels.generic.websocket import AsyncWebsocketConsumer
+
+from .models import ChatModel, MessageModel
+
 
 class ChatConsumer(AsyncWebsocketConsumer):
     async def connect(self):
-        self.room_name = self.scope["url_route"]["kwargs"]["room_name"]
-        self.room_group_name = f"chat_{self.room_name}"
+        self.room_id = self.scope["url_route"]["kwargs"]["room_id"]
+        self.room_group_name = f"chat_{self.room_id}"
 
         # Join room group
         await self.channel_layer.group_add(self.room_group_name, self.channel_name)
@@ -19,16 +23,37 @@ class ChatConsumer(AsyncWebsocketConsumer):
     # Receive message from WebSocket
     async def receive(self, text_data):
         text_data_json = json.loads(text_data)
-        message = text_data_json["message"]
+        message = text_data_json["text"]
+        user = self.scope['user']
+        chat = await self.get_chat()
+        saved_message = await self.save_message(chat, user, message)
 
         # Send message to room group
         await self.channel_layer.group_send(
-            self.room_group_name, {"type": "chat.message", "message": message}
+            self.room_group_name, {
+                "type": "chat.message",
+                "text": saved_message.text,
+                "author_id": saved_message.author.id,
+                "author_avatar": saved_message.author.avatar.url,
+                "time": saved_message.created_at.isoformat(),
+            }
         )
 
     # Receive message from room group
     async def chat_message(self, event):
-        message = event["message"]
 
         # Send message to WebSocket
-        await self.send(text_data=json.dumps({"message": message}))
+        await self.send(text_data=json.dumps({
+            "text": event["text"],
+            "author_id": event["author_id"],
+            "author_avatar": event["author_avatar"],
+            "time": event["time"],
+        }))
+
+    @database_sync_to_async
+    def get_chat(self):
+        return ChatModel.objects.get(id=self.room_id)
+
+    @database_sync_to_async
+    def save_message(self, chat, author, text):
+        return MessageModel.objects.create(chat=chat, author=author, text=text)
