@@ -24,43 +24,6 @@ function formatTime(isoString) {
     return `${hours}:${minutes}`;
 }
 
-function renderMessage({ author, text, created_at, author_avatar }, user, isCurrentUser, chatAvatar, chatTitle) {
-    const time = formatTime(created_at);
-    const avatar = isCurrentUser ? user.avatar : author_avatar;
-
-    let html = '';
-
-    if (isCurrentUser) {
-        html = `
-            <div class="outgoing-chats">
-                <div class="outgoing-chats-img">
-                    <img src="${avatar}">
-                </div>
-                <div class="outgoing-chats-msg">
-                    <p>${text}</p>
-                    <span class="time">${time}</span>
-                </div>
-            </div>
-        `;
-    } else {
-        companionAvatarImg.src = chatAvatar;
-        companionName.innerHTML = `<p>${chatTitle}</p>`;
-        html = `
-            <div class="received-chats">
-                <div class="received-chats-img">
-                    <img src="${avatar}">
-                </div>
-                <div class="received-msg-inbox">
-                    <p>${text}</p>
-                    <span class="time">${time}</span>
-                </div>
-            </div>
-        `;
-    }
-
-    msgPage.insertAdjacentHTML("beforeend", html);
-}
-
 function showNotification(type, message) {
     const notifications = document.querySelector(".notifications");
     const toast = document.createElement("li");
@@ -91,43 +54,67 @@ function removeToast(toast) {
     setTimeout(() => toast.remove(), 500);
 }
 
+function renderMessage({ author, text, created_at, author_avatar }, user, isCurrentUser, chatAvatar, chatTitle) {
+    const time = formatTime(created_at);
+    const avatar = isCurrentUser ? user.avatar : author_avatar;
+
+    let html = '';
+
+    if (isCurrentUser) {
+        html = `
+            <div class="outgoing-chats">
+                <div class="outgoing-chats-img">
+                    <img src="${avatar}">
+                </div>
+                <div class="outgoing-chats-msg">
+                    <p>${text}</p>
+                    <span class="time">${time}</span>
+                </div>
+            </div>
+        `;
+    } else {
+        document.getElementById("companionAvatarImg").src = chatAvatar;
+        document.getElementById("companionName").innerHTML = `<p>${chatTitle}</p>`;
+        html = `
+            <div class="received-chats">
+                <div class="received-chats-img">
+                    <img src="${avatar}">
+                </div>
+                <div class="received-msg-inbox">
+                    <p>${text}</p>
+                    <span class="time">${time}</span>
+                </div>
+            </div>
+        `;
+    }
+    msgPage.insertAdjacentHTML("beforeend", html);
+}
 
 document.addEventListener('DOMContentLoaded', async function () {
+    const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+
+    // Пользователь
     const user = await get_user();
     let userId = null
-    const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
-    const authBtn = document.getElementById('authBtn');
-    const openRegBtn = document.getElementById('openRegBtn');
-    const backBtn = document.getElementById('backBtn');
-    const regBtn = document.getElementById('regBtn');
+
+    // Модальные
     const modalOverlay = document.getElementById('modalOverlay');
     const authModal = document.querySelector('.auth-modal');
     const regModal = document.querySelector('.reg-modal');
+
+    // Чат
     const chatApp = document.querySelector('.chat-app');
     const chatsList = document.getElementById("chatsList");
     const msgPage = document.getElementById("msgPage");
-    const chatItemBtn = document.getElementById("chatItemBtn");
-    const profileModal = document.querySelector('.profile-modal')
-    const menuBtn = document.getElementById('menuBtn');
-    const errorAuth = document.getElementById("errorAuth")
-    const closeBtn = document.querySelector('.profile-modal__close-btn')
-    const avatarImg = document.getElementById("avatarImg");
-    const avatarInput = document.getElementById("avatarInput");
-    const companionAvatarImg = document.getElementById("companionAvatarImg");
-    const companionName = document.getElementById("companionName");
-    const profileUsername = document.getElementById("profileUsername");
-    const profileFirstName = document.getElementById("profileFirstName");
-    const profileLastName = document.getElementById("profileLastName");
-    const profileMainUsername = document.getElementById("profileMainUsername");
-    const profileBio = document.getElementById("profileBio");
-    const saveProfile = document.getElementById("saveProfile");
-    const msgHeader = document.querySelector(".msg-header");
-    const msgBottom = document.querySelector(".msg-bottom");
-    const selector = document.querySelector(".selector");
     const inputMessage = document.querySelector('.chat-message-input');
     const messageSubmit = document.querySelector('.chat-message-submit');
 
-    // Функция проверки авторизации пользователя
+    // Профиль
+    const avatarImg = document.getElementById("avatarImg");
+    const profileModal = document.querySelector('.profile-modal')
+    const avatarInput = document.getElementById("avatarInput");
+
+    // Проверка авторизации
     async function checkAuth() {
         if (!user) {
             authModal.style.display = 'flex';
@@ -141,8 +128,8 @@ document.addEventListener('DOMContentLoaded', async function () {
 
     checkAuth();
 
-    // Обработка авторизации
-    authBtn.addEventListener('click', async () => {
+    // АВТОРИЗАЦИЯ
+    document.getElementById('authBtn').addEventListener('click', async () => {
         const username = document.querySelector('#username_auth').value;
         const password = document.querySelector('#password_auth').value;
 
@@ -163,27 +150,12 @@ document.addEventListener('DOMContentLoaded', async function () {
             window.location.reload();
         } else {
             const data = await response.json();
-            errorAuth.innerHTML = `<p style="color: red">Вы ввели неверный логин или пароль!</p>`;
-        }
-    });
-
-    // Обработка выхода из аккаунта
-    logoutBtn.addEventListener('click', async ()=> {
-        response = await fetch(`/api-auth/logout/`, {
-            method: "POST",
-            headers: {
-                'X-CSRFToken': csrfToken,
-            },
-            credentials: 'include',
-        });
-
-        if (response.ok) {
-            window.location.reload();
+            document.getElementById("errorAuth").innerHTML = `<p style="color: red">Вы ввели неверный логин или пароль!</p>`;
         }
     });
 
     // Регистрация пользователя
-    regBtn.addEventListener('click', async () => {
+    document.getElementById('regBtn').addEventListener('click', async () => {
         const errorDiv = document.getElementById('reg-error');
         const username = document.querySelector('#username_reg').value;
         const password = document.querySelector('#password_reg').value;
@@ -224,62 +196,178 @@ document.addEventListener('DOMContentLoaded', async function () {
         }
     });
 
-    openRegBtn.addEventListener('click', () => {
-        authModal.style.display = 'none';
-        regModal.style.display = 'flex';
-    });
-
-    backBtn.addEventListener('click', () => {
-        regModal.style.display = 'none';
-        authModal.style.display = 'flex';
-    });
-
-    menuBtn.addEventListener('click', () => {
-        profileModal.classList.toggle('active');
-        profileMainUsername.innerHTML = `${user.username}`
-        profileUsername.value = `${user.username}`
-        profileFirstName.value = `${user.first_name}`
-        profileLastName.value = `${user.last_name}`
-        profileBio.value = `${user.bio}`
-    });
-
-    saveProfile.addEventListener('click', async () => {
-        const username = document.querySelector('#profileUsername').value;
-        const first_name = document.querySelector('#profileFirstName').value;
-        const last_name = document.querySelector('#profileLastName').value;
-        const bio = document.querySelector('#profileBio').value;
-
-        response = await fetch(`/api/users/${userId}/`, {
-            method: "PATCH",
+    // Обработка выхода из аккаунта
+    logoutBtn.addEventListener('click', async ()=> {
+        response = await fetch(`/api-auth/logout/`, {
+            method: "POST",
             headers: {
                 'X-CSRFToken': csrfToken,
-                'Content-Type': 'application/json',
             },
             credentials: 'include',
-            body: JSON.stringify({ username, first_name, last_name, bio })
         });
 
         if (response.ok) {
             window.location.reload();
-            showNotification('success', 'Профиль успешно сохранен!');
-        } else {
-            const data = await response.json();
-            showNotification('error', `Ошибка сохранения профиля: ${data.username[0]}`);
         }
     });
 
-    if (closeBtn) {
-        closeBtn.addEventListener('click', () =>{
-            profileModal.classList.remove('active');
-        });
+    // Обработка модальных окон регистрации
+    document.getElementById('openRegBtn').addEventListener('click', () => {
+        authModal.style.display = 'none';
+        regModal.style.display = 'flex';
+    });
+
+    document.getElementById('backBtn').addEventListener('click', () => {
+        regModal.style.display = 'none';
+        authModal.style.display = 'flex';
+    });
+
+    // ЧАТ
+    // Загрузка чатов
+    const response = await fetch("/api/chats/", {
+        method: 'GET',
+        credentials: "include"  // обязательно, чтобы передавались куки авторизации
+    });
+
+    if (!response.ok) {
+        throw new Error("Ошибка получения чатов");
     }
 
-    // Открытие выбора файла
+    const chats = await response.json();
+    chatsList.innerHTML = "";  // очистим список перед добавлением
+
+    chats.forEach(chat => {
+        const chatId = chat.id;
+        const isGroup = chat.is_group;
+        const chatAvatar = chat.display_photo
+        const title = chat.display_name;
+        const lastMessage = chat.last_message;
+        const messageTime = formatTime(chat.created_at);
+
+        const chatHTML = `
+            <div class="chat-item" data-id=${chatId} data-title=${title} data-avatar=${chatAvatar}>
+                <img src="${chatAvatar}" class="chat-avatar">
+                <div class="chat-info">
+                    <span class="chat-name">${title}</span>
+                    <span class="last-message">${lastMessage}</span>
+                </div>
+                <span class="message-time">${messageTime}</span>
+            </div>
+        `;
+        chatsList.insertAdjacentHTML("beforeend", chatHTML);
+    });
+
+    // Открытие чата
+    document.querySelector('.chats-list').addEventListener('click', async (event) => {
+        const clickedItem = event.target.closest('.chat-item');
+        if (!clickedItem) return;
+
+        // Убираем класс active у всех элементов
+        document.querySelectorAll('.chat-item').forEach(item => {
+            item.classList.remove('active');
+        });
+
+        // Добавляем класс active к выбранному элементу
+        clickedItem.classList.add('active');
+        document.querySelector(".msg-header").style.display = "flex";
+        document.querySelector(".msg-bottom").style.display = "flex";
+        document.querySelector(".selector").style.display = "none";
+
+        // Получаем ID чата
+        const chatId = clickedItem.dataset.id;
+        const chatAvatar = clickedItem.dataset.avatar;
+        const chatTitle = clickedItem.dataset.title;
+
+        const response = await fetch(`/api/chats/${chatId}/get_messages/`, {
+            method: 'GET',
+            credentials: "include"
+        });
+
+        if (!response.ok) {
+            throw new Error("Ошибка получения чатов");
+        }
+
+        msgPage.innerHTML = "";
+
+        // Загрузка истории сообщений
+        const messages = await response.json();
+        messages.forEach(message => {
+            const isCurrentUser = userId == message.author.id;
+
+            // Функция для вывода в чат сообщений
+            renderMessage({
+                author: message.author,
+                text: message.text,
+                created_at: message.created_at,
+                author_avatar: message.author.avatar
+            }, user, isCurrentUser, chatAvatar, chatTitle);
+        });
+
+        // Подключение к WebSocket
+        const chatSocket = new WebSocket(
+             'ws://'
+            + window.location.host
+            + '/ws/chat/'
+            + chatId
+            + '/'
+        );
+
+        // Получение отправленных сообщений
+        chatSocket.onmessage = function(e) {
+            const data = JSON.parse(e.data);
+            const isCurrentUser = userId == data.author_id;
+
+            renderMessage({
+                author: { id: data.author_id },
+                text: data.text,
+                created_at: data.time,
+                author_avatar: data.author_avatar
+            }, user, isCurrentUser, chatAvatar, chatTitle);
+            console.log("Чат сокет");
+        };
+
+        chatSocket.onclose = function(e) {
+            console.error('Чат сокет закрыт!')
+        };
+
+        inputMessage.focus();
+        inputMessage.onkeyup = function(e) {
+            if (e.key === 'Enter') {
+                messageSubmit.click();
+            }
+        };
+
+        // Отправка сообщений в чат
+        messageSubmit.onclick = function(e) {
+            const messageInputDom = document.querySelector('.chat-message-input');
+            const text = messageInputDom.value;
+            chatSocket.send(JSON.stringify({
+                'text': text
+            }));
+            messageInputDom.value = '';
+        };
+    });
+
+    // ПРОФИЛЬ
+    document.getElementById('menuBtn').addEventListener('click', () => {
+        profileModal.classList.toggle('active');
+        document.getElementById("profileMainUsername").innerHTML = `${user.username}`
+        document.getElementById("profileUsername").value = `${user.username}`
+        document.getElementById("profileFirstName").value = `${user.first_name}`
+        document.getElementById("profileLastName").value = `${user.last_name}`
+        document.getElementById("profileBio").value = `${user.bio}`
+    });
+
+    document.querySelector('.profile-modal__close-btn').addEventListener('click', () =>{
+        profileModal.classList.remove('active');
+    });
+
+    // Открытие выбора аватарки
     avatarImg.addEventListener("click", () => {
         avatarInput.click();
     });
 
-    // После выбора файла — отправляем его
+    // Отправка аватарки на сервер
     avatarInput.addEventListener("change", async () => {
         const file = avatarInput.files[0];
         if (!file) return;
@@ -308,127 +396,30 @@ document.addEventListener('DOMContentLoaded', async function () {
         }
     });
 
-    // Загрузка чатов
-    try {
-        const response = await fetch("/api/chats/", {
-            method: 'GET',
-            credentials: "include"  // обязательно, чтобы передавались куки авторизации
+    // Сохранение профиля
+    document.getElementById("saveProfile").addEventListener('click', async () => {
+        const username = document.querySelector('#profileUsername').value;
+        const first_name = document.querySelector('#profileFirstName').value;
+        const last_name = document.querySelector('#profileLastName').value;
+        const bio = document.querySelector('#profileBio').value;
+
+        response = await fetch(`/api/users/${userId}/`, {
+            method: "PATCH",
+            headers: {
+                'X-CSRFToken': csrfToken,
+                'Content-Type': 'application/json',
+            },
+            credentials: 'include',
+            body: JSON.stringify({ username, first_name, last_name, bio })
         });
 
-        if (!response.ok) {
-            throw new Error("Ошибка получения чатов");
+        if (response.ok) {
+            window.location.reload();
+            showNotification('success', 'Профиль успешно сохранен!');
+        } else {
+            const data = await response.json();
+            showNotification('error', `Ошибка сохранения профиля: ${data.username[0]}`);
         }
-
-        const chats = await response.json();
-        chatsList.innerHTML = "";  // очистим список перед добавлением
-
-        chats.forEach(chat => {
-            const chatId = chat.id;
-            const isGroup = chat.is_group;
-            const chatAvatar = chat.display_photo
-            const title = chat.display_name;
-            const lastMessage = chat.last_message;
-            const messageTime = formatTime(chat.created_at); // можно добавить поле created_at
-
-            const chatHTML = `
-                <div class="chat-item" data-id=${chatId} data-title=${title} data-avatar=${chatAvatar}>
-                    <img src="${chatAvatar}" class="chat-avatar">
-                    <div class="chat-info">
-                        <span class="chat-name">${title}</span>
-                        <span class="last-message">${lastMessage}</span>
-                    </div>
-                    <span class="message-time">${messageTime}</span>
-                </div>
-            `;
-            chatsList.insertAdjacentHTML("beforeend", chatHTML);
-        });
-
-    } catch (error) {
-        console.error("Ошибка загрузки чатов:", error);
-    }
-
-    document.querySelector('.chats-list').addEventListener('click', async (event) => {
-        const clickedItem = event.target.closest('.chat-item');
-        if (!clickedItem) return;
-
-        // Убираем класс active у всех элементов
-        document.querySelectorAll('.chat-item').forEach(item => {
-            item.classList.remove('active');
-        });
-
-        // Добавляем класс active к выбранному элементу
-        clickedItem.classList.add('active');
-        msgHeader.style.display = "flex";
-        msgBottom.style.display = "flex";
-        selector.style.display = "none";
-
-        // Получаем ID чата
-        const chatId = clickedItem.dataset.id;
-        const chatAvatar = clickedItem.dataset.avatar;
-        const chatTitle = clickedItem.dataset.title;
-
-        const response = await fetch(`/api/chats/${chatId}/get_messages/`, {
-            method: 'GET',
-            credentials: "include"
-        });
-
-        if (!response.ok) {
-            throw new Error("Ошибка получения чатов");
-        }
-
-        msgPage.innerHTML = "";
-
-        const messages = await response.json();
-        messages.forEach(message => {
-            const isCurrentUser = userId == message.author.id;
-            renderMessage({
-                author: message.author,
-                text: message.text,
-                created_at: message.created_at,
-                author_avatar: message.author.avatar
-            }, user, isCurrentUser, chatAvatar, chatTitle);
-        });
-
-        const chatSocket = new WebSocket(
-             'ws://'
-            + window.location.host
-            + '/ws/chat/'
-            + chatId
-            + '/'
-        );
-
-        chatSocket.onmessage = function(e) {
-            const data = JSON.parse(e.data);
-            const isCurrentUser = userId == data.author_id;
-
-            renderMessage({
-                author: { id: data.author_id },
-                text: data.text,
-                created_at: data.time,
-                author_avatar: data.author_avatar
-            }, user, isCurrentUser, chatAvatar, chatTitle);
-        };
-
-        chatSocket.onclose = function(e) {
-            console.error('Чат сокет закрыт!')
-        };
-
-        inputMessage.focus();
-        inputMessage.onkeyup = function(e) {
-            if (e.key === 'Enter') {  // enter, return
-                messageSubmit.click();
-            }
-        };
-
-        messageSubmit.onclick = function(e) {
-            const messageInputDom = document.querySelector('.chat-message-input');
-            const text = messageInputDom.value;
-            chatSocket.send(JSON.stringify({
-                'text': text
-            }));
-            messageInputDom.value = '';
-        };
-
     });
 
 });
