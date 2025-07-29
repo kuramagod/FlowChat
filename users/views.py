@@ -10,8 +10,10 @@ from rest_framework.views import APIView
 
 from .serializers import UserSerializer
 
+User = get_user_model()
+
 class UserViewSet(viewsets.ModelViewSet):
-    queryset = get_user_model().objects.all()
+    queryset = User.objects.all()
     serializer_class = UserSerializer
     permission_classes = [AllowAny]
 
@@ -21,6 +23,12 @@ class UserViewSet(viewsets.ModelViewSet):
     @action(detail=False, methods=["get"],  permission_classes=[IsAuthenticated])
     def me(self, request):
         serializer = self.get_serializer(request.user)
+        return Response(serializer.data)
+
+    @action(detail=True, methods=["get"], permission_classes=[IsAuthenticated])
+    def profile(self, request, pk=None):
+        user = User.objects.get(id=pk)
+        serializer = self.get_serializer(user)
         return Response(serializer.data)
 
 
