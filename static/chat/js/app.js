@@ -31,12 +31,12 @@ function showNotification(type, message) {
     toast.className = `toast ${type}`;
     toast.innerHTML = `
         <div class="column">
-            <span style="font-size: 1.5em; margin-right: 10px;">
+            <i style="font-size: 1.5em; margin-right: 10px;">
                 ${type === 'success' ? '✓' : '✗'}
-            </span>
+            </i>
             <span>${message}</span>
         </div>
-        <span style="font-size: 1.5em; cursor: pointer;" onclick="removeToast(this.parentElement)">×</span>
+        <i style="font-size: 1.5em; cursor: pointer;" onclick="removeToast(this.parentElement)">×</i>
     `;
 
     notifications.appendChild(toast);
@@ -90,6 +90,30 @@ function renderMessage({ author, text, created_at, author_avatar }, user, isCurr
     msgPage.insertAdjacentHTML("beforeend", html);
 }
 
+function showProfile(obj, mode) {
+    document.querySelector('.profile-modal__title').innerHTML = mode ? `Профиль` : `Настройки профиля`;
+    document.getElementById("profileMainUsername").innerHTML = `${obj.username}`
+
+    avatarInput.disabled = mode;
+    avatarImg.src = obj.avatar;
+    avatarImg.style.cursor = mode ? 'default': 'pointer';
+
+    profileUsername.readOnly = mode;
+    profileUsername.value = obj.username;
+
+    profileFirstName.readOnly = mode;
+    profileFirstName.value = obj.first_name
+
+    profileLastName.readOnly = mode;
+    profileLastName.value = obj.last_name
+
+    profileBio.readOnly = mode;
+    profileBio.value = obj.bio
+
+    logoutBtn.style.display = mode ? 'none' : 'flex';
+    saveProfile.style.display = mode ? 'none' : 'flex';
+}
+
 document.addEventListener('DOMContentLoaded', async function () {
     const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
 
@@ -113,6 +137,12 @@ document.addEventListener('DOMContentLoaded', async function () {
     const avatarImg = document.getElementById("avatarImg");
     const profileModal = document.querySelector('.profile-modal')
     const avatarInput = document.getElementById("avatarInput");
+    const profileUsername = document.getElementById("profileUsername")
+    const profileFirstName =  document.getElementById("profileFirstName");
+    const profileLastName =  document.getElementById("profileLastName");
+    const profileBio =  document.getElementById("profileBio");
+    const saveProfile = document.getElementById("saveProfile");
+    const logoutBtn = document.getElementById("logoutBtn");
 
     // Проверка авторизации
     async function checkAuth() {
@@ -239,13 +269,17 @@ document.addEventListener('DOMContentLoaded', async function () {
     chats.forEach(chat => {
         const chatId = chat.id;
         const isGroup = chat.is_group;
-        const chatAvatar = chat.display_photo
+        let companionId = -1;
+        if (!isGroup) {
+            companionId = chat.members[0] == userId ? chat.members[1] : chat.members[0];
+        }
+        const chatAvatar = chat.display_photo;
         const title = chat.display_name;
         const lastMessage = chat.last_message;
         const messageTime = formatTime(chat.created_at);
 
         const chatHTML = `
-            <div class="chat-item" data-id=${chatId} data-title=${title} data-avatar=${chatAvatar}>
+            <div class="chat-item" data-id=${chatId} data-title=${title} data-avatar=${chatAvatar} data-compid=${companionId}>
                 <img src="${chatAvatar}" class="chat-avatar">
                 <div class="chat-info">
                     <span class="chat-name">${title}</span>
@@ -277,6 +311,31 @@ document.addEventListener('DOMContentLoaded', async function () {
         const chatId = clickedItem.dataset.id;
         const chatAvatar = clickedItem.dataset.avatar;
         const chatTitle = clickedItem.dataset.title;
+        const compId = clickedItem.dataset.compid;
+        let currentCompanion = null;
+
+        const companionElement = document.querySelector('.companion-info');
+
+        // Удаляем старый обработчик
+        companionElement.replaceWith(companionElement.cloneNode(true));
+        const newCompanionElement = document.querySelector('.companion-info');
+
+        if (compId != -1) {
+            const response = await fetch(`/api/users/${compId}/profile/`, {
+                method: 'GET',
+                credentials: "include"
+            });
+
+            currentCompanion = await response.json();
+
+            newCompanionElement.addEventListener('click', () => {
+                if (currentCompanion == null) return;
+                profileModal.classList.toggle('active');
+                showProfile(currentCompanion, true);
+            });
+        } else {
+            currentCompanion = null;
+        }
 
         const response = await fetch(`/api/chats/${chatId}/get_messages/`, {
             method: 'GET',
@@ -351,11 +410,7 @@ document.addEventListener('DOMContentLoaded', async function () {
     // ПРОФИЛЬ
     document.getElementById('menuBtn').addEventListener('click', () => {
         profileModal.classList.toggle('active');
-        document.getElementById("profileMainUsername").innerHTML = `${user.username}`
-        document.getElementById("profileUsername").value = `${user.username}`
-        document.getElementById("profileFirstName").value = `${user.first_name}`
-        document.getElementById("profileLastName").value = `${user.last_name}`
-        document.getElementById("profileBio").value = `${user.bio}`
+        showProfile(user, false);
     });
 
     document.querySelector('.profile-modal__close-btn').addEventListener('click', () =>{
@@ -403,7 +458,7 @@ document.addEventListener('DOMContentLoaded', async function () {
         const last_name = document.querySelector('#profileLastName').value;
         const bio = document.querySelector('#profileBio').value;
 
-        response = await fetch(`/api/users/${userId}/`, {
+        const response = await fetch(`/api/users/${userId}/`, {
             method: "PATCH",
             headers: {
                 'X-CSRFToken': csrfToken,
@@ -414,11 +469,12 @@ document.addEventListener('DOMContentLoaded', async function () {
         });
 
         if (response.ok) {
-            window.location.reload();
-            showNotification('success', 'Профиль успешно сохранен!');
+            showNotification('success', 'Профиль успешно изменён!');
+            profileModal.classList.remove('active');
         } else {
             const data = await response.json();
-            showNotification('error', `Ошибка сохранения профиля: ${data.username[0]}`);
+            const errorText = data.username?.[0] || 'Ошибка при сохранении';
+            showNotification('error', errorText);
         }
     });
 
