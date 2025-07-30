@@ -149,6 +149,8 @@ document.addEventListener('DOMContentLoaded', async function () {
     const searchModal = document.getElementById('searchModal');
     const searchModalOverlay = document.getElementById('searchModalOverlay');
 
+    // Поиск пользователей
+    const searchUsersList = document.getElementById('searchUsersList');
 
     // Проверка авторизации
     async function checkAuth() {
@@ -413,17 +415,7 @@ document.addEventListener('DOMContentLoaded', async function () {
         };
     });
 
-    document.getElementById('menuBtn').addEventListener('click', () => {
-        menuModal.style.visibility = 'visible';
-        menuModal.style.display = 'block';
-        setTimeout(() => {
-            menuModal.classList.add('active');
-        }, 10);
-        document.getElementById('menuAvatarImg').src = user.avatar
-        document.getElementById('menuUsername').innerHTML = user.username
-    });
-
-    // ПРОФИЛЬ
+    // Профиль пользователя
     document.getElementById('profileBtn').addEventListener('click', () => {
         menuModal.classList.remove('active');
         setTimeout(() => {
@@ -434,20 +426,16 @@ document.addEventListener('DOMContentLoaded', async function () {
         showProfile(user, false);
     });
 
-    document.getElementById('closeMenuBtn').addEventListener('click', () => {
-        menuModal.classList.remove('active');
-
-        setTimeout(() => {
-            menuModal.style.display = 'none';
-            menuModal.style.visibility = 'hidden';
-        }, 300);
+    document.querySelector('.profile-modal__close-btn').addEventListener('click', () =>{
+        profileModal.classList.remove('active');
     });
 
     document.querySelector('.profile-modal__close-btn').addEventListener('click', () =>{
         profileModal.classList.remove('active');
     });
 
-    document.getElementById('searchBtn').addEventListener('click', () =>{
+    // Поиск пользователя
+    document.getElementById('searchBtn').addEventListener('click', async () =>{
         menuModal.classList.remove('active');
         setTimeout(() => {
             menuModal.style.display = 'none';
@@ -455,6 +443,26 @@ document.addEventListener('DOMContentLoaded', async function () {
         }, 300);
         searchModal.style.display='flex';
         searchModalOverlay.style.display='block';
+
+        const response = await fetch(`/api/users/all/`, {
+            method: "GET",
+            credentials: 'include',
+        });
+
+        const users = await response.json()
+
+        users.forEach(search_user => {
+            if (search_user.username == user.username) {
+                return;
+            }
+            userHTML = `
+            <div class="search-modal__user">
+                <img src="${search_user.avatar}" class="search-modal__avatar-img" alt="Аватар">
+                <span class="search-modal__username">${search_user.username}</span>
+            </div>
+            `
+            searchUsersList.insertAdjacentHTML("beforeend", userHTML);
+        });
     });
 
     document.querySelector('.search-modal__close-btn').addEventListener('click', () =>{
@@ -462,8 +470,24 @@ document.addEventListener('DOMContentLoaded', async function () {
         searchModalOverlay.style.display = 'none';
     })
 
-    document.querySelector('.profile-modal__close-btn').addEventListener('click', () =>{
-        profileModal.classList.remove('active');
+    // Меню
+    document.getElementById('menuBtn').addEventListener('click', () => {
+        menuModal.style.visibility = 'visible';
+        menuModal.style.display = 'block';
+        setTimeout(() => {
+            menuModal.classList.add('active');
+        }, 10);
+        document.getElementById('menuAvatarImg').src = user.avatar
+        document.getElementById('menuUsername').innerHTML = user.username
+    });
+
+    document.getElementById('closeMenuBtn').addEventListener('click', () => {
+        menuModal.classList.remove('active');
+
+        setTimeout(() => {
+            menuModal.style.display = 'none';
+            menuModal.style.visibility = 'hidden';
+        }, 300);
     });
 
     // Открытие выбора аватарки

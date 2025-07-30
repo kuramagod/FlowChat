@@ -31,6 +31,15 @@ class UserViewSet(viewsets.ModelViewSet):
         serializer = self.get_serializer(user)
         return Response(serializer.data)
 
+    @action(detail=False, methods=["get"], permission_classes=[IsAuthenticated])
+    def all(self, request):
+        users = User.objects.all()
+        data = [{
+            'username': user.username,
+            'avatar': user.avatar.url
+        } for user in users]
+        return Response(data)
+
 
 class UserLoginView(APIView):
     permission_classes = [AllowAny]
