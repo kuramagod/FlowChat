@@ -144,6 +144,12 @@ document.addEventListener('DOMContentLoaded', async function () {
     const saveProfile = document.getElementById("saveProfile");
     const logoutBtn = document.getElementById("logoutBtn");
 
+    // Меню
+    const menuModal = document.querySelector('.menu-modal');
+    const searchModal = document.getElementById('searchModal');
+    const searchModalOverlay = document.getElementById('searchModalOverlay');
+
+
     // Проверка авторизации
     async function checkAuth() {
         if (!user) {
@@ -407,11 +413,54 @@ document.addEventListener('DOMContentLoaded', async function () {
         };
     });
 
-    // ПРОФИЛЬ
     document.getElementById('menuBtn').addEventListener('click', () => {
+        menuModal.style.visibility = 'visible';
+        menuModal.style.display = 'block';
+        setTimeout(() => {
+            menuModal.classList.add('active');
+        }, 10);
+        document.getElementById('menuAvatarImg').src = user.avatar
+        document.getElementById('menuUsername').innerHTML = user.username
+    });
+
+    // ПРОФИЛЬ
+    document.getElementById('profileBtn').addEventListener('click', () => {
+        menuModal.classList.remove('active');
+        setTimeout(() => {
+            menuModal.style.display = 'none';
+            menuModal.style.visibility = 'hidden';
+        }, 300);
         profileModal.classList.toggle('active');
         showProfile(user, false);
     });
+
+    document.getElementById('closeMenuBtn').addEventListener('click', () => {
+        menuModal.classList.remove('active');
+
+        setTimeout(() => {
+            menuModal.style.display = 'none';
+            menuModal.style.visibility = 'hidden';
+        }, 300);
+    });
+
+    document.querySelector('.profile-modal__close-btn').addEventListener('click', () =>{
+        profileModal.classList.remove('active');
+    });
+
+    document.getElementById('searchBtn').addEventListener('click', () =>{
+        menuModal.classList.remove('active');
+        setTimeout(() => {
+            menuModal.style.display = 'none';
+            menuModal.style.visibility = 'hidden';
+        }, 300);
+        searchModal.style.display='flex';
+        searchModalOverlay.style.display='block';
+    });
+
+    document.querySelector('.search-modal__close-btn').addEventListener('click', () =>{
+        searchModal.style.display='none';
+        searchModalOverlay.style.display = 'none';
+    })
 
     document.querySelector('.profile-modal__close-btn').addEventListener('click', () =>{
         profileModal.classList.remove('active');

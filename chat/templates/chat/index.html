@@ -23,7 +23,6 @@
                 <button class="btn" id="authBtn">Войти</button>
                 <a class="register-link" id="openRegBtn">Нет аккаунта? Зарегистрироваться</a>
             </div>
-
         </div>
 
         <div class="reg-modal">
@@ -35,6 +34,46 @@
             <div id="reg-error" style="color: red; display: none; margin: 5px;"></div>
             <div class="button">
                 <button class="btn" id="regBtn">Зарегистрироваться</button>
+            </div>
+        </div>
+
+         <div class="menu-modal" id="menuModal">
+            <div class="menu-modal__header">
+                <img src="" class="menu-modal__avatar-img" id="menuAvatarImg" alt="Аватар">
+                <span class="menu-modal__username" id="menuUsername"></span>
+                <button class="menu-modal__close-btn" id="closeMenuBtn">&#10006;</button>
+            </div>
+            <div class="menu-modal__main-area">
+                <button class="menu-modal__item-btn" id="profileBtn">
+                    <img src="{% static 'chat/icons/profile.svg' %}" class="menu-modal__icon" alt="Мой профиль">
+                    <span class="menu-modal__text">Мой профиль</span>
+                </button>
+                <button class="menu-modal__item-btn" id="searchBtn">
+                    <img src="{% static 'chat/icons/human_search.svg' %}" class="menu-modal__icon" alt="Поиск пользователя">
+                    <span class="menu-modal__text">Поиск пользователя</span>
+                </button>
+                <button class="menu-modal__item-btn" id="groupChatBtn">
+                    <img src="{% static 'chat/icons/group.svg' %}" class="menu-modal__icon" alt="Создать групповой чат">
+                    <span class="menu-modal__text">Создать групповой чат</span>
+                </button>
+            </div>
+        </div>
+
+        <div class="search-modal-overlay" id="searchModalOverlay"></div>
+
+        <div class="search-modal" id="searchModal">
+            <div class="search-modal__header">
+                <span class="search-modal__title">Пользователи</span>
+                <button class="search-modal__close-btn" id="backBtn">&#10006;</button>
+            </div>
+            <div class="search-modal__input-container">
+                <input class="search-modal__input" type="text" placeholder="Введите имя пользователя...">
+            </div>
+            <div class="search-modal__users-area">
+                <div class="search-modal__user">
+                    <img src="" class="search-modal__avatar-img" alt="Аватар">
+                    <span class="search-modal__username">Username</span>
+                </div>
             </div>
         </div>
 

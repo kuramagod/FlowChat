@@ -8,7 +8,6 @@ html, body {
     padding: 0;
     height: 100%;
     background-color: #f5f5f5;
-    overflow-x: hidden;
 }
 
 .wrapper {
@@ -157,9 +156,9 @@ input:focus {
 .sidebar-header {
     padding: 15px;
     display: flex;
-    flex-direction: row; 
+    flex-direction: row;
     align-items: center;
-    gap: 15px; 
+    gap: 15px;
     height: 90px;
     background: #efefef;
     border-bottom: 1px solid #e0e0e0;
@@ -450,7 +449,7 @@ input:focus {
     word-break: break-word;
     line-height: 1.4;
     box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
-    width: 100%; 
+    width: 100%;
     box-sizing: border-box;
 }
 
@@ -555,7 +554,7 @@ input:focus {
     background: none;
     font-size: 24px;
     cursor: pointer;
-    color: #777;
+    color: #333;
     transition: all 0.3s;
     display: flex;
     align-items: center;
@@ -683,6 +682,202 @@ input:focus {
     font-size: 24px;
 }
 
+/* Menu modal */
+.menu-modal {
+    position: fixed;
+    display: none;
+    top: 0;
+    left: 0;
+    width: 550px;
+    height: 100%;
+    background: #efefef;
+    z-index: 200;
+    transform: translateX(-100%);
+    transition: transform 0.3s ease;
+    border-bottom: 1px solid #ddd;
+    border-right: 1px solid #ddd;
+    visibility: hidden;
+}
+
+.menu-modal.active {
+    transform: translateX(0);
+    visibility: visible;
+}
+
+.menu-modal__header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 15px;
+    background: #efefef;
+    border-bottom: 1px solid #ddd;
+    font-weight: bold;
+    gap: 10px;
+}
+
+.menu-modal__close-btn {
+    background: none;
+    border: none;
+    font-size: 30px;
+    cursor: pointer;
+    color: #333;
+}
+
+.menu-modal__avatar-img {
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
+    object-fit: cover;
+}
+
+.menu-modal__username {
+    flex-grow: 1;
+    font-size: 24px;
+    color: black;
+    margin-left: 10px;
+}
+
+.menu-modal__main-area {
+    padding: 10px 0;
+}
+
+.menu-modal__item-btn {
+    display: flex;
+    align-items: center;
+    padding: 12px 20px;
+    background: transparent;
+    border: none;
+    width: 100%;
+    text-align: left;
+    font-size: 22px;
+    cursor: pointer;
+    transition: background 0.2s;
+    color: black;
+}
+
+.menu-modal__item-btn:hover {
+    background: #d6d6d6;
+}
+
+.menu-modal__icon {
+    margin-right: 15px;
+    width: 30px;
+    height: 30px;
+    color: black;
+}
+
+.menu-modal__text {
+    font-size: 24px;
+    color: black;
+}
+
+/* Search-modal */
+.search-modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.5);
+    display: none;
+    z-index: 199;
+}
+
+.search-modal {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 500px;
+    max-height: 80vh;
+    background: white;
+    z-index: 1001;
+    border-radius: 10px;
+    overflow: hidden;
+    box-shadow: 0 0 10px rgba(0,0,0,0.3);
+    display: none;
+    flex-direction: column;
+}
+
+.search-modal__header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 15px;
+    border-bottom: 1px solid #ddd;
+    font-weight: bold;
+}
+
+.search-modal__close-btn {
+    background: none;
+    border: none;
+    font-size: 30px;
+    cursor: pointer;
+    color: #333;
+}
+
+.search-modal__input-container {
+    padding: 15px;
+}
+
+.search-modal__input {
+    width: 100%;
+    padding: 10px;
+    margin-bottom: 0px;
+    font-size: 24px;
+    border: 1px solid #ccc;
+    border-radius: 10px;
+}
+
+.search-modal__title {
+    font-size: 28px;
+    color: black;
+}
+
+.search-modal__users-area {
+    flex-grow: 1;
+    overflow-y: auto;
+    max-height: 50vh;
+    padding: 10px;
+    box-sizing: border-box;
+}
+
+.search-modal__user {
+    display: flex;
+    align-items: center;
+    padding: 10px;
+    margin-bottom: 10px;
+    border: 1px solid #eee;
+    border-radius: 10px;
+    background: #f9f9f9;
+    transition: background 0.3s ease, transform 0.3s ease, box-shadow 0.3s ease;
+    cursor: pointer;
+}
+
+.search-modal__user:hover {
+    background: #efefef;
+    transform: scale(1.02);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.search-modal__user:last-child {
+    margin-bottom: 0;
+}
+
+.search-modal__avatar-img {
+    width: 55px;
+    height: 55px;
+    border-radius: 50%;
+    object-fit: cover;
+    margin-right: 10px;
+}
+
+.search-modal__username {
+    font-size: 20px;
+    color: black;
+}
+
+/* Notifications */
 .notifications {
     position: fixed;
     top: 30px;
@@ -932,7 +1127,6 @@ input:focus {
     .profile-modal__avatar-img {
         width: 80px;
         height: 80px;
-        cursor:pointer;
     }
 
     .profile-modal__info-section {
