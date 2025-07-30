@@ -114,6 +114,28 @@ function showProfile(obj, mode) {
     saveProfile.style.display = mode ? 'none' : 'flex';
 }
 
+// Функция для рендеринга пользователей
+function renderUsers(users, current_user) {
+    searchUsersList.innerHTML = ''; // очистка перед рендерингом
+
+    if (users.length === 0) {
+        searchUsersList.innerHTML = '<div class="search-modal__user">Ничего не найдено</div>';
+        return;
+    }
+
+    users.forEach(search_user => {
+        if (search_user.username === current_user.username) return; // пропустить текущего
+
+        const userHTML = `
+            <div class="search-modal__user">
+                <img src="${search_user.avatar}" class="search-modal__avatar-img" alt="Аватар">
+                <span class="search-modal__username">${search_user.username}</span>
+            </div>
+        `;
+        searchUsersList.insertAdjacentHTML("beforeend", userHTML);
+    });
+}
+
 document.addEventListener('DOMContentLoaded', async function () {
     const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
 
@@ -151,6 +173,8 @@ document.addEventListener('DOMContentLoaded', async function () {
 
     // Поиск пользователей
     const searchUsersList = document.getElementById('searchUsersList');
+    const searchInput = document.querySelector('.search-modal__input');
+    let allUsers = [];
 
     // Проверка авторизации
     async function checkAuth() {
@@ -449,20 +473,20 @@ document.addEventListener('DOMContentLoaded', async function () {
             credentials: 'include',
         });
 
-        const users = await response.json()
+        allUsers = await response.json();
 
-        users.forEach(search_user => {
-            if (search_user.username == user.username) {
-                return;
-            }
-            userHTML = `
-            <div class="search-modal__user">
-                <img src="${search_user.avatar}" class="search-modal__avatar-img" alt="Аватар">
-                <span class="search-modal__username">${search_user.username}</span>
-            </div>
-            `
-            searchUsersList.insertAdjacentHTML("beforeend", userHTML);
-        });
+        renderUsers(allUsers, user);
+    });
+
+    // Обработка ввода в поле поиска
+    searchInput.addEventListener('input', () => {
+        const query = searchInput.value.trim().toLowerCase();
+
+        const filtered = allUsers.filter(user =>
+            user.username.toLowerCase().includes(query)
+        );
+
+        renderUsers(filtered, user);
     });
 
     document.querySelector('.search-modal__close-btn').addEventListener('click', () =>{
