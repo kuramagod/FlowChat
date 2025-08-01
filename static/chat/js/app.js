@@ -328,18 +328,26 @@ document.addEventListener('DOMContentLoaded', async function () {
         renderChats(chat, userId)
     });
 
-        const chatHTML = `
-            <div class="chat-item" data-id=${chatId} data-title=${title} data-avatar=${chatAvatar} data-compid=${companionId}>
-                <img src="${chatAvatar}" class="chat-avatar">
-                <div class="chat-info">
-                    <span class="chat-name">${title}</span>
-                    <span class="last-message">${lastMessage}</span>
-                </div>
-                <span class="message-time">${messageTime}</span>
-            </div>
-        `;
-        chatsList.insertAdjacentHTML("beforeend", chatHTML);
-    });
+    // Подключение к сокету уведомлений
+    const notifySocket = new WebSocket(
+        'ws://'
+        + window.location.host
+        + '/ws/notifications/'
+    );
+
+    notifySocket.onmessage = async function(e) {
+      const data = JSON.parse(e.data);
+
+      // Получение нового чата у собеседника
+      if (data.type == "new_chat") {
+        const response = await fetch(`/api/chats/${data.chat_id}/`, {
+            method: 'GET',
+            credentials: "include"
+        });
+        const new_chat = await response.json();
+        renderChats(new_chat, userId);
+      }
+    };
 
     startChat.addEventListener('click', async () => {
         const selectUserId = startChat.dataset.userId
