@@ -286,7 +286,7 @@ document.addEventListener('DOMContentLoaded', async function () {
 
     // Обработка выхода из аккаунта
     logoutBtn.addEventListener('click', async ()=> {
-        response = await fetch(`/api-auth/logout/`, {
+        const response = await fetch(`/api-auth/logout/`, {
             method: "POST",
             headers: {
                 'X-CSRFToken': csrfToken,
@@ -324,6 +324,7 @@ document.addEventListener('DOMContentLoaded', async function () {
     const chats = await response.json();
     chatsList.innerHTML = "";  // очистим список перед добавлением
 
+    // Загрузка чатов из базы данных
     chats.forEach(chat => {
         renderChats(chat, userId)
     });
@@ -445,9 +446,6 @@ document.addEventListener('DOMContentLoaded', async function () {
 
         msgPage.innerHTML = "";
 
-        document.getElementById("companionAvatarImg").src = chatAvatar;
-        document.getElementById("companionName").innerHTML = `<p>${chatTitle}</p>`;
-
         // Загрузка истории сообщений
         try {
             const messages = await response.json();
@@ -476,6 +474,9 @@ document.addEventListener('DOMContentLoaded', async function () {
             + '/'
         );
 
+        document.getElementById("companionAvatarImg").src = chatAvatar;
+        document.getElementById("companionName").innerHTML = `<p>${chatTitle}</p>`;
+
         // Получение отправленных сообщений
         chatSocket.onmessage = function(e) {
             const data = JSON.parse(e.data);
@@ -487,7 +488,6 @@ document.addEventListener('DOMContentLoaded', async function () {
                 created_at: data.time,
                 author_avatar: data.author_avatar
             }, user, isCurrentUser);
-            console.log("Чат сокет");
         };
 
         chatSocket.onclose = function(e) {
