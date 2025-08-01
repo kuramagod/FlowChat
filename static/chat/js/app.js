@@ -202,6 +202,9 @@ document.addEventListener('DOMContentLoaded', async function () {
     const searchInput = document.querySelector('.search-modal__input');
     let allUsers = [];
 
+    // Поиск чата
+    const searchChat = document.querySelector('.search-input');
+
     // Проверка авторизации
     async function checkAuth() {
         if (!user) {
@@ -322,7 +325,7 @@ document.addEventListener('DOMContentLoaded', async function () {
     }
 
     const chats = await response.json();
-    chatsList.innerHTML = "";  // очистим список перед добавлением
+    chatsList.innerHTML = "";
 
     // Загрузка чатов из базы данных
     chats.forEach(chat => {
@@ -349,6 +352,20 @@ document.addEventListener('DOMContentLoaded', async function () {
         renderChats(new_chat, userId);
       }
     };
+
+    searchChat.addEventListener('input', () => {
+        const query = searchChat.value.trim().toLowerCase();
+
+        const filtered = query
+            ? chats.filter(chat => chat.display_name.toLowerCase().includes(query))
+            : chats;
+
+        chatsList.innerHTML = ""; // Очищаем перед отрисовкой
+
+        filtered.forEach(chat => {
+            renderChats(chat, userId);
+        });
+    });
 
     startChat.addEventListener('click', async () => {
         const selectUserId = startChat.dataset.userId
