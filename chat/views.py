@@ -1,7 +1,6 @@
 from datetime import datetime
 
-from django.shortcuts import render
-from django.views.decorators.csrf import csrf_exempt
+from django.contrib.auth import get_user_model
 from django.views.generic import ListView
 from rest_framework import viewsets, status, mixins
 from rest_framework.decorators import action
@@ -13,6 +12,7 @@ from rest_framework.viewsets import GenericViewSet
 from .models import ChatModel, MessageModel
 from .serializers import ChatSerializer, MessageSerializer
 
+User = get_user_model()
 
 class HomePage(ListView):
     model = ChatModel
@@ -34,13 +34,36 @@ class ChatViewSet(viewsets.ModelViewSet):
     def get_queryset(self):
         return ChatModel.objects.filter(members=self.request.user) # Методы list и retrieve будут доступны только участникам чата.
 
+    @action(detail=False, methods=['post'])
+    def get_or_create(self, request):
+        current_user = request.user
+        companion_id = request.data.get("user_id")
+
+        if not companion_id:
+            return Response({"detail": "user_id обязателен."}, status=status.HTTP_400_BAD_REQUEST)
+
+        try:
+            companion = User.objects.get(id=companion_id)
+        except User.DoesNotExist:
+            return Response({'detail': 'Пользователь не найден.'}, status=status.HTTP_404_NOT_FOUND)
+
+        chat = ChatModel.objects.filter(is_group=False, members__in=[current_user]).filter(members__in=[companion]).distinct().first()
+
+        if not chat:
+            chat = ChatModel.objects.create(is_group=False)
+            chat.title = f"Чат {current_user.username}|{companion.username}"
+            chat.members.add(current_user, companion)
+
+        serializer = self.get_serializer(chat, context={'request': request})
+        return Response(serializer.data)
+
     @action(detail=True, methods=['get']) # Маршрут GET /api/chats/pk/get_messages/, выводит все сообщения pk чата.
     def get_messages(self, request, pk=None):
         user = request.user
         messages = MessageModel.objects.filter(chat=pk, chat__members=user) # QuerySet сообщений чата pk, доступен только пользователям которые является участниками чата.
 
         if not messages.exists():
-            return Response(status=status.HTTP_403_FORBIDDEN)
+            return Response()
 
         serializer = MessageSerializer(messages, many=True)
         return Response(serializer.data)
