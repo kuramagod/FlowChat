@@ -134,7 +134,32 @@ function renderUsers(users, current_user) {
         `;
         searchUsersList.insertAdjacentHTML("beforeend", userHTML);
     });
-}
+};
+
+function renderChats(chat, userId) {
+    const chatId = chat.id;
+    const isGroup = chat.is_group;
+    let companionId = -1;
+    if (!isGroup) {
+        companionId = chat.members[0] == userId ? chat.members[1] : chat.members[0];
+    }
+    const chatAvatar = chat.display_photo;
+    const title = chat.display_name;
+    const lastMessage = chat.last_message;
+    const messageTime = chat.display_time ? formatTime(chat.display_time): '';
+
+    const chatHTML = `
+        <div class="chat-item" data-id=${chatId} data-title=${title} data-avatar=${chatAvatar} data-compid=${companionId}>
+            <img src="${chatAvatar}" class="chat-avatar">
+            <div class="chat-info">
+                <span class="chat-name">${title}</span>
+                <span class="last-message">${lastMessage}</span>
+            </div>
+            <span class="message-time">${messageTime}</span>
+        </div>
+    `;
+    chatsList.insertAdjacentHTML("beforeend", chatHTML);
+};
 
 document.addEventListener('DOMContentLoaded', async function () {
     const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
@@ -300,16 +325,8 @@ document.addEventListener('DOMContentLoaded', async function () {
     chatsList.innerHTML = "";  // очистим список перед добавлением
 
     chats.forEach(chat => {
-        const chatId = chat.id;
-        const isGroup = chat.is_group;
-        let companionId = -1;
-        if (!isGroup) {
-            companionId = chat.members[0] == userId ? chat.members[1] : chat.members[0];
-        }
-        const chatAvatar = chat.display_photo;
-        const title = chat.display_name;
-        const lastMessage = chat.last_message;
-        const messageTime = formatTime(chat.created_at);
+        renderChats(chat, userId)
+    });
 
         const chatHTML = `
             <div class="chat-item" data-id=${chatId} data-title=${title} data-avatar=${chatAvatar} data-compid=${companionId}>
