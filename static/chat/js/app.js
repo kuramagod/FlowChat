@@ -54,7 +54,7 @@ function removeToast(toast) {
     setTimeout(() => toast.remove(), 500);
 }
 
-function renderMessage({ author, text, created_at, author_avatar }, user, isCurrentUser, chatAvatar, chatTitle) {
+function renderMessage({ author, text, created_at, author_avatar }, user, isCurrentUser) {
     const time = formatTime(created_at);
     const avatar = isCurrentUser ? user.avatar : author_avatar;
 
@@ -73,8 +73,6 @@ function renderMessage({ author, text, created_at, author_avatar }, user, isCurr
             </div>
         `;
     } else {
-        document.getElementById("companionAvatarImg").src = chatAvatar;
-        document.getElementById("companionName").innerHTML = `<p>${chatTitle}</p>`;
         html = `
             <div class="received-chats">
                 <div class="received-chats-img">
@@ -112,6 +110,8 @@ function showProfile(obj, mode) {
 
     logoutBtn.style.display = mode ? 'none' : 'flex';
     saveProfile.style.display = mode ? 'none' : 'flex';
+    startChat.style.display = mode ? 'flex' : 'none';
+    startChat.dataset.userId = mode ? obj.id : '';
 }
 
 // Функция для рендеринга пользователей
@@ -127,7 +127,7 @@ function renderUsers(users, current_user) {
         if (search_user.username === current_user.username) return; // пропустить текущего
 
         const userHTML = `
-            <div class="search-modal__user">
+            <div class="search-modal__user" data-id=${search_user.id}>
                 <img src="${search_user.avatar}" class="search-modal__avatar-img" alt="Аватар">
                 <span class="search-modal__username">${search_user.username}</span>
             </div>
@@ -165,6 +165,7 @@ document.addEventListener('DOMContentLoaded', async function () {
     const profileBio =  document.getElementById("profileBio");
     const saveProfile = document.getElementById("saveProfile");
     const logoutBtn = document.getElementById("logoutBtn");
+    const startChat = document.getElementById("startChat");
 
     // Меню
     const menuModal = document.querySelector('.menu-modal');
@@ -323,6 +324,46 @@ document.addEventListener('DOMContentLoaded', async function () {
         chatsList.insertAdjacentHTML("beforeend", chatHTML);
     });
 
+    startChat.addEventListener('click', async () => {
+        const selectUserId = startChat.dataset.userId
+        if (!selectUserId) return;
+
+        const response = await fetch('/api/chats/get_or_create/', {
+            method: 'POST',
+            credentials: 'include',
+            headers: {
+                'X-CSRFToken': csrfToken,
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                user_id: selectUserId
+            })
+        });
+
+        if (!response.ok) {
+            throw new Error("Не удалось создать/получить чат");
+        }
+
+        const chat = await response.json();
+
+        const existingChat = document.querySelector(`.chat-item[data-id="${chat.id}"]`);
+        if (!existingChat) {
+            const chatHTML = `
+                <div class="chat-item" data-id=${chat.id} data-title="${chat.display_name}" data-avatar="${chat.display_photo}" data-compid="${selectUser.id}">
+                    <img src="${chat.display_photo}" class="chat-avatar">
+                    <div class="chat-info">
+                        <span class="chat-name">${chat.display_name}</span>
+                        <span class="last-message"></span>
+                    </div>
+                    <span class="message-time"></span>
+                </div>
+            `;
+            chatsList.insertAdjacentHTML("afterbegin", chatHTML);
+        }
+
+        document.querySelector(`.chat-item[data-id="${chat.id}"]`).click();
+    });
+
     // Открытие чата
     document.querySelector('.chats-list').addEventListener('click', async (event) => {
         const clickedItem = event.target.closest('.chat-item');
@@ -344,6 +385,8 @@ document.addEventListener('DOMContentLoaded', async function () {
         const chatAvatar = clickedItem.dataset.avatar;
         const chatTitle = clickedItem.dataset.title;
         const compId = clickedItem.dataset.compid;
+
+        // Загрузка профиля собеседника
         let currentCompanion = null;
 
         const companionElement = document.querySelector('.companion-info');
@@ -369,30 +412,35 @@ document.addEventListener('DOMContentLoaded', async function () {
             currentCompanion = null;
         }
 
+        // Загрузка сообщений
         const response = await fetch(`/api/chats/${chatId}/get_messages/`, {
             method: 'GET',
             credentials: "include"
         });
 
-        if (!response.ok) {
-            throw new Error("Ошибка получения чатов");
-        }
-
         msgPage.innerHTML = "";
 
-        // Загрузка истории сообщений
-        const messages = await response.json();
-        messages.forEach(message => {
-            const isCurrentUser = userId == message.author.id;
+        document.getElementById("companionAvatarImg").src = chatAvatar;
+        document.getElementById("companionName").innerHTML = `<p>${chatTitle}</p>`;
 
-            // Функция для вывода в чат сообщений
-            renderMessage({
-                author: message.author,
-                text: message.text,
-                created_at: message.created_at,
-                author_avatar: message.author.avatar
-            }, user, isCurrentUser, chatAvatar, chatTitle);
-        });
+        // Загрузка истории сообщений
+        try {
+            const messages = await response.json();
+
+            messages.forEach(message => {
+                const isCurrentUser = userId == message.author.id;
+
+                // Функция для вывода в чат сообщений
+                renderMessage({
+                    author: message.author,
+                    text: message.text,
+                    created_at: message.created_at,
+                    author_avatar: message.author.avatar
+                }, user, isCurrentUser);
+            });
+        } catch { // Отлавливаем пустой ответ, который означает что сообщений в чате нет.
+            console.log('Сообщений нету');
+        }
 
         // Подключение к WebSocket
         const chatSocket = new WebSocket(
@@ -413,7 +461,7 @@ document.addEventListener('DOMContentLoaded', async function () {
                 text: data.text,
                 created_at: data.time,
                 author_avatar: data.author_avatar
-            }, user, isCurrentUser, chatAvatar, chatTitle);
+            }, user, isCurrentUser);
             console.log("Чат сокет");
         };
 
@@ -487,6 +535,25 @@ document.addEventListener('DOMContentLoaded', async function () {
         );
 
         renderUsers(filtered, user);
+    });
+
+    searchUsersList.addEventListener('click', async (event) => {
+        const clickedUser = event.target.closest('.search-modal__user');
+        if (!clickedUser) return;
+
+        searchModal.style.display='none';
+        searchModalOverlay.style.display = 'none';
+
+        const selectUserId = clickedUser.dataset.id
+
+        const response = await fetch(`api/users/${selectUserId}/profile/`, {
+            method: 'GET',
+            credentials: 'include'
+        });
+
+        selectUser = await response.json();
+        profileModal.classList.toggle('active');
+        showProfile(selectUser, true);
     });
 
     document.querySelector('.search-modal__close-btn').addEventListener('click', () =>{
