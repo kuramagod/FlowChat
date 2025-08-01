@@ -1,5 +1,7 @@
 from datetime import datetime
 
+from asgiref.sync import async_to_sync
+from channels.layers import get_channel_layer
 from django.contrib.auth import get_user_model
 from django.views.generic import ListView
 from rest_framework import viewsets, status, mixins
@@ -53,6 +55,16 @@ class ChatViewSet(viewsets.ModelViewSet):
             chat = ChatModel.objects.create(is_group=False)
             chat.title = f"Чат {current_user.username}|{companion.username}"
             chat.members.add(current_user, companion)
+
+        channel_layer = get_channel_layer()
+
+        async_to_sync(channel_layer.group_send)(
+            f"user_{companion.id}",
+            {
+                "type": "new_chat",
+                "chat_id": chat.id
+            }
+        )
 
         serializer = self.get_serializer(chat, context={'request': request})
         return Response(serializer.data)
