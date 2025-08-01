@@ -30,7 +30,7 @@ class ChatSerializer(serializers.ModelSerializer):
         return obj.avatar.url
 
     def get_last_message(self, obj):
-        return obj.messages.last().text
+        return obj.messages.last().text if obj.messages.exists() else ''
 
 
 class UserShortSerializer(serializers.ModelSerializer): # Сериализер для подробной информации об авторе.
