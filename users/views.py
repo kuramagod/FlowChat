@@ -35,6 +35,7 @@ class UserViewSet(viewsets.ModelViewSet):
     def all(self, request):
         users = User.objects.all()
         data = [{
+            'id': user.id,
             'username': user.username,
             'avatar': user.avatar.url
         } for user in users]
