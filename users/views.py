@@ -1,12 +1,11 @@
 from django.contrib.auth import authenticate, login, get_user_model
-from django.shortcuts import render
-from django.utils.decorators import method_decorator
-from django.views.decorators.csrf import csrf_exempt
 from rest_framework import viewsets, status
+from rest_framework.authentication import TokenAuthentication
 from rest_framework.decorators import action
 from rest_framework.permissions import IsAuthenticated, AllowAny
 from rest_framework.response import Response
 from rest_framework.views import APIView
+from rest_framework.authtoken.models import Token
 
 from .serializers import UserSerializer
 
@@ -53,12 +52,24 @@ class UserLoginView(APIView):
 
         if user is not None:
             login(request, user)
+
+            token, created = Token.objects.get_or_create(user=user)
             return Response({
                 'id': user.id,
                 'username': user.username,
+                'token': token.key,
                 'detail': 'Login successful'
             }, status=status.HTTP_200_OK)
         else:
             return Response({
                 'detail': 'Invalid credentials'
             }, status.HTTP_401_UNAUTHORIZED)
+
+
+class UserLogoutView(APIView):
+    authentication_classes = [TokenAuthentication]
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        request.user.auth_token.delete()
+        return Response({'detail': 'Logged out successfully'}, status=status.HTTP_200_OK)
