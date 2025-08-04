@@ -1,8 +1,11 @@
 async function get_user() {
+    const token = localStorage.getItem('authToken');
     try {
         const response = await fetch('/api/users/me/', {
             method: 'GET',
-            credentials: 'include',
+            headers: {
+                'Authorization': `Token ${token}`,
+            },
         });
 
         if (response.status === 200) {
@@ -162,7 +165,7 @@ function renderChats(chat, userId) {
 };
 
 document.addEventListener('DOMContentLoaded', async function () {
-    const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+    const token = localStorage.getItem('authToken');
 
     // Пользователь
     const user = await get_user();
@@ -228,14 +231,14 @@ document.addEventListener('DOMContentLoaded', async function () {
         const response = await fetch(`/api/login/`, {
             method: 'POST',
             headers: {
-                'X-CSRFToken': csrfToken,
                 'Content-Type': 'application/json',
             },
-            credentials: 'include',
             body: JSON.stringify({ username, password })
         });
 
         if (response.ok) {
+            userData = await response.json()
+            localStorage.setItem('authToken', userData.token);
             authModal.style.display = 'none';
             modalOverlay.style.display = 'none';
             chatApp.style.display = 'flex';
@@ -262,7 +265,6 @@ document.addEventListener('DOMContentLoaded', async function () {
         const response = await fetch(`/api/users/`, {
             method: "POST",
             headers: {
-                'X-CSRFToken': csrfToken,
                 'Content-Type': 'application/json',
             },
             body: JSON.stringify({username, password})
@@ -290,15 +292,15 @@ document.addEventListener('DOMContentLoaded', async function () {
 
     // Обработка выхода из аккаунта
     logoutBtn.addEventListener('click', async ()=> {
-        const response = await fetch(`/api-auth/logout/`, {
+        const response = await fetch(`/api/logout/`, {
             method: "POST",
             headers: {
-                'X-CSRFToken': csrfToken,
-            },
-            credentials: 'include',
+                'Authorization': `Token ${token}`,
+            }
         });
 
         if (response.ok) {
+            localStorage.removeItem('authToken');
             window.location.reload();
         } else {
             showNotification('error', "Ошибка выхода!");
@@ -320,7 +322,9 @@ document.addEventListener('DOMContentLoaded', async function () {
     // Загрузка чатов
     const response = await fetch("/api/chats/", {
         method: 'GET',
-        credentials: "include"
+        headers: {
+            'Authorization': `Token ${token}`,
+        }
     });
 
     if (!response.ok) {
@@ -337,8 +341,8 @@ document.addEventListener('DOMContentLoaded', async function () {
 
     // Подключение к сокету уведомлений
     const notifySocket = new WebSocket(
-        'ws://'
 //        'wss://'
+        'ws://'
         + window.location.host
         + '/ws/notifications/'
     );
@@ -351,7 +355,9 @@ document.addEventListener('DOMContentLoaded', async function () {
       if (data.type == "new_chat") {
         const response = await fetch(`/api/chats/${data.chat_id}/`, {
             method: 'GET',
-            credentials: "include"
+            headers: {
+                'Authorization': `Token ${token}`,
+            }
         });
         const new_chat = await response.json();
         renderChats(new_chat, userId);
@@ -380,7 +386,7 @@ document.addEventListener('DOMContentLoaded', async function () {
             method: 'POST',
             credentials: 'include',
             headers: {
-                'X-CSRFToken': csrfToken,
+                'Authorization': `Token ${token}`,
                 'Content-Type': 'application/json'
             },
             body: JSON.stringify({
@@ -441,6 +447,9 @@ document.addEventListener('DOMContentLoaded', async function () {
         if (companionId != "null") {
             const response = await fetch(`/api/users/${companionId}/profile/`, {
                 method: 'GET',
+                headers: {
+                    'Authorization': `Token ${token}`,
+                },
                 credentials: "include"
             });
 
@@ -458,7 +467,9 @@ document.addEventListener('DOMContentLoaded', async function () {
         // Загрузка сообщений
         const response = await fetch(`/api/chats/${chatId}/get_messages/`, {
             method: 'GET',
-            credentials: "include"
+            headers: {
+                'Authorization': `Token ${token}`,
+            }
         });
 
         msgPage.innerHTML = "";
@@ -488,8 +499,8 @@ document.addEventListener('DOMContentLoaded', async function () {
 
         // Подключение к WebSocket
         const chatSocket = new WebSocket(
-             'ws://'
-//             'wss://'
+             'wss://'
+//             'ws://'
             + window.location.host
             + '/ws/chat/'
             + chatId
@@ -562,7 +573,9 @@ document.addEventListener('DOMContentLoaded', async function () {
 
         const response = await fetch(`/api/users/all/`, {
             method: "GET",
-            credentials: 'include',
+            headers: {
+                'Authorization': `Token ${token}`,
+            }
         });
 
         allUsers = await response.json();
@@ -592,7 +605,9 @@ document.addEventListener('DOMContentLoaded', async function () {
 
         const response = await fetch(`api/users/${selectUserId}/profile/`, {
             method: 'GET',
-            credentials: 'include'
+            headers: {
+                'Authorization': `Token ${token}`,
+            }
         });
 
         selectUser = await response.json();
@@ -642,7 +657,7 @@ document.addEventListener('DOMContentLoaded', async function () {
             const response = await fetch(`/api/users/${userId}/`, {
                 method: "PATCH",
                 headers: {
-                    'X-CSRFToken': csrfToken,
+                    'Authorization': `Token ${token}`,
                 },
                 body: formData,
                 credentials: "include",
@@ -669,7 +684,7 @@ document.addEventListener('DOMContentLoaded', async function () {
         const response = await fetch(`/api/users/${userId}/`, {
             method: "PATCH",
             headers: {
-                'X-CSRFToken': csrfToken,
+                'Authorization': `Token ${token}`,
                 'Content-Type': 'application/json',
             },
             credentials: 'include',
