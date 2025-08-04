@@ -139,7 +139,7 @@ function renderUsers(users, current_user) {
 function renderChats(chat, userId) {
     const chatId = chat.id;
     const isGroup = chat.is_group;
-    let companionId = -1;
+    let companionId = null;
     if (!isGroup) {
         companionId = chat.members[0] == userId ? chat.members[1] : chat.members[0];
     }
@@ -149,7 +149,7 @@ function renderChats(chat, userId) {
     const messageTime = chat.display_time ? formatTime(chat.display_time): '';
 
     const chatHTML = `
-        <div class="chat-item" data-id=${chatId} data-title=${title} data-avatar=${chatAvatar} data-compid=${companionId}>
+        <div class="chat-item" data-id=${chatId} data-title=${title} data-avatar=${chatAvatar} data-companion-id=${companionId}>
             <img src="${chatAvatar}" class="chat-avatar">
             <div class="chat-info">
                 <span class="chat-name">${title}</span>
@@ -219,10 +219,11 @@ document.addEventListener('DOMContentLoaded', async function () {
 
     checkAuth();
 
-    // АВТОРИЗАЦИЯ
+    // Авторизация
     document.getElementById('authBtn').addEventListener('click', async () => {
         const username = document.querySelector('#username_auth').value;
         const password = document.querySelector('#password_auth').value;
+        const errorAuth = document.getElementById("errorAuth");
 
         const response = await fetch(`/api/login/`, {
             method: 'POST',
@@ -240,8 +241,8 @@ document.addEventListener('DOMContentLoaded', async function () {
             chatApp.style.display = 'flex';
             window.location.reload();
         } else {
-            const data = await response.json();
-            document.getElementById("errorAuth").innerHTML = `<p style="color: red">Вы ввели неверный логин или пароль!</p>`;
+            errorAuth.textContent = 'Вы ввели неверный логин или пароль!';
+            errorAuth.style.display = 'block';
         }
     });
 
@@ -299,6 +300,8 @@ document.addEventListener('DOMContentLoaded', async function () {
 
         if (response.ok) {
             window.location.reload();
+        } else {
+            showNotification('error', "Ошибка выхода!");
         }
     });
 
@@ -317,11 +320,11 @@ document.addEventListener('DOMContentLoaded', async function () {
     // Загрузка чатов
     const response = await fetch("/api/chats/", {
         method: 'GET',
-        credentials: "include"  // обязательно, чтобы передавались куки авторизации
+        credentials: "include"
     });
 
     if (!response.ok) {
-        throw new Error("Ошибка получения чатов");
+        console.log('error', "Ошибка загрузки чата!");
     }
 
     const chats = await response.json();
@@ -335,12 +338,14 @@ document.addEventListener('DOMContentLoaded', async function () {
     // Подключение к сокету уведомлений
     const notifySocket = new WebSocket(
         'ws://'
+//        'wss://'
         + window.location.host
         + '/ws/notifications/'
     );
 
     notifySocket.onmessage = async function(e) {
       const data = JSON.parse(e.data);
+      console.log('Пришло сообщение');
 
       // Получение нового чата у собеседника
       if (data.type == "new_chat") {
@@ -360,7 +365,7 @@ document.addEventListener('DOMContentLoaded', async function () {
             ? chats.filter(chat => chat.display_name.toLowerCase().includes(query))
             : chats;
 
-        chatsList.innerHTML = ""; // Очищаем перед отрисовкой
+        chatsList.innerHTML = "";
 
         filtered.forEach(chat => {
             renderChats(chat, userId);
@@ -384,24 +389,14 @@ document.addEventListener('DOMContentLoaded', async function () {
         });
 
         if (!response.ok) {
-            throw new Error("Не удалось создать/получить чат");
+            showNotification('error', "Не удалось создать/получить чат");
         }
 
         const chat = await response.json();
 
         const existingChat = document.querySelector(`.chat-item[data-id="${chat.id}"]`);
         if (!existingChat) {
-            const chatHTML = `
-                <div class="chat-item" data-id=${chat.id} data-title="${chat.display_name}" data-avatar="${chat.display_photo}" data-compid="${selectUser.id}">
-                    <img src="${chat.display_photo}" class="chat-avatar">
-                    <div class="chat-info">
-                        <span class="chat-name">${chat.display_name}</span>
-                        <span class="last-message"></span>
-                    </div>
-                    <span class="message-time"></span>
-                </div>
-            `;
-            chatsList.insertAdjacentHTML("afterbegin", chatHTML);
+            renderChats(chat, userId);
         }
 
         document.querySelector(`.chat-item[data-id="${chat.id}"]`).click();
@@ -419,15 +414,20 @@ document.addEventListener('DOMContentLoaded', async function () {
 
         // Добавляем класс active к выбранному элементу
         clickedItem.classList.add('active');
+
         document.querySelector(".msg-header").style.display = "flex";
         document.querySelector(".msg-bottom").style.display = "flex";
         document.querySelector(".selector").style.display = "none";
 
-        // Получаем ID чата
+
+        // Получаем данные чата
         const chatId = clickedItem.dataset.id;
         const chatAvatar = clickedItem.dataset.avatar;
         const chatTitle = clickedItem.dataset.title;
-        const compId = clickedItem.dataset.compid;
+        const companionId = clickedItem.dataset.companionId;
+
+        document.getElementById("companionAvatarImg").src = chatAvatar;
+        document.getElementById("companionName").textContent = chatTitle;
 
         // Загрузка профиля собеседника
         let currentCompanion = null;
@@ -438,8 +438,8 @@ document.addEventListener('DOMContentLoaded', async function () {
         companionElement.replaceWith(companionElement.cloneNode(true));
         const newCompanionElement = document.querySelector('.companion-info');
 
-        if (compId != -1) {
-            const response = await fetch(`/api/users/${compId}/profile/`, {
+        if (companionId != "null") {
+            const response = await fetch(`/api/users/${companionId}/profile/`, {
                 method: 'GET',
                 credentials: "include"
             });
@@ -482,17 +482,19 @@ document.addEventListener('DOMContentLoaded', async function () {
             console.log('Сообщений нету');
         }
 
+        if (window.chatSocket && window.chatSocket.readyState === WebSocket.OPEN) {
+            window.chatSocket.close();
+        }
+
         // Подключение к WebSocket
         const chatSocket = new WebSocket(
              'ws://'
+//             'wss://'
             + window.location.host
             + '/ws/chat/'
             + chatId
             + '/'
         );
-
-        document.getElementById("companionAvatarImg").src = chatAvatar;
-        document.getElementById("companionName").innerHTML = `<p>${chatTitle}</p>`;
 
         // Получение отправленных сообщений
         chatSocket.onmessage = function(e) {
@@ -586,7 +588,7 @@ document.addEventListener('DOMContentLoaded', async function () {
         searchModal.style.display='none';
         searchModalOverlay.style.display = 'none';
 
-        const selectUserId = clickedUser.dataset.id
+        const selectUserId = clickedUser.dataset.id;
 
         const response = await fetch(`api/users/${selectUserId}/profile/`, {
             method: 'GET',
@@ -610,8 +612,8 @@ document.addEventListener('DOMContentLoaded', async function () {
         setTimeout(() => {
             menuModal.classList.add('active');
         }, 10);
-        document.getElementById('menuAvatarImg').src = user.avatar
-        document.getElementById('menuUsername').innerHTML = user.username
+        document.getElementById('menuAvatarImg').src = user.avatar;
+        document.getElementById('menuUsername').textContent = user.username;
     });
 
     document.getElementById('closeMenuBtn').addEventListener('click', () => {
@@ -647,7 +649,7 @@ document.addEventListener('DOMContentLoaded', async function () {
             });
 
             if (!response.ok) {
-                throw new Error("Ошибка обновления аватара");
+                showNotification('error', 'Ошибка загрузки аватара!');
             }
 
             const data = await response.json();
