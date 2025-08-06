@@ -1,4 +1,5 @@
 const token = localStorage.getItem('authToken');
+let lastMessageDate = null;
 
 async function get_user() {
     try {
@@ -58,14 +59,31 @@ function removeToast(toast) {
     setTimeout(() => toast.remove(), 500);
 }
 
+function formatDate(dateString) {
+    const date = new Date(dateString);
+    const options = { day: 'numeric', month: 'long' }; // например, "6 августа"
+    return date.toLocaleDateString('ru-RU', options);
+}
+
 function renderMessage({ author, text, created_at, author_avatar }, user, isCurrentUser) {
     const time = formatTime(created_at);
     const avatar = isCurrentUser ? user.avatar : author_avatar;
 
+    const currentDate = new Date(created_at).toDateString();
     let html = '';
 
+    if (lastMessageDate !== currentDate) {
+        const formattedDate = formatDate(created_at);
+        html += `
+            <div class="date-label">
+                <span>${formattedDate}</span>
+            </div>
+        `;
+        lastMessageDate = currentDate;
+    }
+
     if (isCurrentUser) {
-        html = `
+        html += `
             <div class="outgoing-chats">
                 <div class="outgoing-chats-img">
                     <img src="${avatar}">
@@ -77,7 +95,7 @@ function renderMessage({ author, text, created_at, author_avatar }, user, isCurr
             </div>
         `;
     } else {
-        html = `
+        html += `
             <div class="received-chats">
                 <div class="received-chats-img">
                     <img src="${avatar}">
@@ -380,7 +398,7 @@ document.addEventListener('DOMContentLoaded', async function () {
         });
         const new_chat = await response.json();
         renderChats(new_chat, userId);
-      }};
+    }};
 
     searchChat.addEventListener('input', () => {
         const query = searchChat.value.trim().toLowerCase();
@@ -473,10 +491,10 @@ document.addEventListener('DOMContentLoaded', async function () {
 
             currentCompanion = await response.json();
 
-            newCompanionElement.addEventListener('click', () => {
+            newCompanionElement.addEventListener('click', async () => {
                 if (currentCompanion == null) return;
                 profileModal.classList.toggle('active');
-                showProfile(currentCompanion, true);
+                await showProfile(currentCompanion, true);
             });
         } else {
             currentCompanion = null;
@@ -497,30 +515,31 @@ document.addEventListener('DOMContentLoaded', async function () {
 
         // Загрузка истории сообщений
         try {
-            const messages = await response.json();
+        const messages = await response.json();
 
-            messages.forEach(message => {
-                const isCurrentUser = userId == message.author.id;
+        messages.forEach(message => {
+            const isCurrentUser = userId == message.author.id;
 
-                // Функция для вывода в чат сообщений
-                renderMessage({
-                    author: message.author,
-                    text: message.text,
-                    created_at: message.created_at,
-                    author_avatar: message.author.avatar
-                }, user, isCurrentUser);
-            });
+            // Функция для вывода в чат сообщений
+            renderMessage({
+                author: message.author,
+                text: message.text,
+                created_at: message.created_at,
+                author_avatar: message.author.avatar
+            }, user, isCurrentUser);
+        });
         } catch { // Отлавливаем пустой ответ, который означает что сообщений в чате нет.
             console.log('Сообщений нету');
         }
 
+        // Проверка чтобы не открылось два подключение от одного пользователя
         if (window.chatSocket && window.chatSocket.readyState === WebSocket.OPEN) {
             window.chatSocket.close();
         }
 
         // Подключение к WebSocket
         const chatSocket = new WebSocket(
-             'ws://'
+             'wss://'
             + window.location.host
             + '/ws/chat/'
             + chatId
@@ -563,14 +582,14 @@ document.addEventListener('DOMContentLoaded', async function () {
     });
 
     // Профиль пользователя
-    document.getElementById('profileBtn').addEventListener('click', () => {
+    document.getElementById('profileBtn').addEventListener('click', async () => {
         menuModal.classList.remove('active');
         setTimeout(() => {
             menuModal.style.display = 'none';
             menuModal.style.visibility = 'hidden';
         }, 300);
         profileModal.classList.toggle('active');
-        showProfile(user, false);
+        await showProfile(user, false);
     });
 
     document.querySelector('.profile-modal__close-btn').addEventListener('click', () =>{
@@ -632,7 +651,7 @@ document.addEventListener('DOMContentLoaded', async function () {
 
         selectUser = await response.json();
         profileModal.classList.toggle('active');
-        showProfile(selectUser, true);
+        await showProfile(selectUser, true);
     });
 
     document.querySelector('.search-modal__close-btn').addEventListener('click', () =>{

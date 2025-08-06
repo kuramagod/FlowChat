@@ -548,11 +548,11 @@ input:focus {
     position: relative;
     top: auto;
     right: auto;
-    width: 30px;
-    height: 30px;
+    width: 36.52px;
+    height: 43px;
     border: none;
     background: none;
-    font-size: 24px;
+    font-size: 30px;
     cursor: pointer;
     color: #333;
     transition: all 0.3s;
@@ -1249,4 +1249,19 @@ input:focus {
         width: 120px;
         height: 120px;
     }
+}
+
+.date-label {
+    text-align: center;
+    margin: 20px 0;
+    font-size: 0.9rem;
+    color: #666;
+    position: relative;
+}
+
+.date-label span {
+    background: #e0e0e0;
+    padding: 6px 12px;
+    border-radius: 20px;
+    display: inline-block;
 }
