@@ -1,5 +1,6 @@
+const token = localStorage.getItem('authToken');
+
 async function get_user() {
-    const token = localStorage.getItem('authToken');
     try {
         const response = await fetch('/api/users/me/', {
             method: 'GET',
@@ -91,25 +92,44 @@ function renderMessage({ author, text, created_at, author_avatar }, user, isCurr
     msgPage.insertAdjacentHTML("beforeend", html);
 }
 
-function showProfile(obj, mode) {
+async function showProfile(user, mode) {
+     const response = await fetch(`/api/users/${user.id}/profile/`, {
+       method: 'GET',
+       headers: {
+            'Authorization': `Token ${token}`
+       }
+    });
+    const obj = await response.json();
+
     document.querySelector('.profile-modal__title').innerHTML = mode ? `Профиль` : `Настройки профиля`;
     document.getElementById("profileMainUsername").innerHTML = `${obj.username}`
+    const online = document.querySelector('.profile-modal__status-online');
+    const offline = document.querySelector('.profile-modal__status-offline');
+
 
     avatarInput.disabled = mode;
     avatarImg.src = obj.avatar;
     avatarImg.style.cursor = mode ? 'default': 'pointer';
 
+    if (obj.is_online) {
+        online.style.display = 'inline';
+        offline.style.display = 'none';
+    } else {
+        online.style.display = 'none';
+        offline.style.display = 'inline';
+    }
+
     profileUsername.readOnly = mode;
     profileUsername.value = obj.username;
 
     profileFirstName.readOnly = mode;
-    profileFirstName.value = obj.first_name
+    profileFirstName.value = obj.first_name;
 
     profileLastName.readOnly = mode;
-    profileLastName.value = obj.last_name
+    profileLastName.value = obj.last_name;
 
     profileBio.readOnly = mode;
-    profileBio.value = obj.bio
+    profileBio.value = obj.bio;
 
     logoutBtn.style.display = mode ? 'none' : 'flex';
     saveProfile.style.display = mode ? 'none' : 'flex';
@@ -145,6 +165,8 @@ function renderChats(chat, userId) {
     let companionId = null;
     if (!isGroup) {
         companionId = chat.members[0] == userId ? chat.members[1] : chat.members[0];
+    } else {
+        companionId = chat.members
     }
     const chatAvatar = chat.display_photo;
     const title = chat.display_name;
@@ -165,8 +187,6 @@ function renderChats(chat, userId) {
 };
 
 document.addEventListener('DOMContentLoaded', async function () {
-    const token = localStorage.getItem('authToken');
-
     // Пользователь
     const user = await get_user();
     let userId = null
@@ -341,7 +361,6 @@ document.addEventListener('DOMContentLoaded', async function () {
 
     // Подключение к сокету уведомлений
     const notifySocket = new WebSocket(
-//        'wss://'
         'ws://'
         + window.location.host
         + '/ws/notifications/'
@@ -361,8 +380,7 @@ document.addEventListener('DOMContentLoaded', async function () {
         });
         const new_chat = await response.json();
         renderChats(new_chat, userId);
-      }
-    };
+      }};
 
     searchChat.addEventListener('input', () => {
         const query = searchChat.value.trim().toLowerCase();
@@ -430,7 +448,7 @@ document.addEventListener('DOMContentLoaded', async function () {
         const chatId = clickedItem.dataset.id;
         const chatAvatar = clickedItem.dataset.avatar;
         const chatTitle = clickedItem.dataset.title;
-        const companionId = clickedItem.dataset.companionId;
+        const companionValue = clickedItem.dataset.companionId;
 
         document.getElementById("companionAvatarImg").src = chatAvatar;
         document.getElementById("companionName").textContent = chatTitle;
@@ -444,8 +462,8 @@ document.addEventListener('DOMContentLoaded', async function () {
         companionElement.replaceWith(companionElement.cloneNode(true));
         const newCompanionElement = document.querySelector('.companion-info');
 
-        if (companionId != "null") {
-            const response = await fetch(`/api/users/${companionId}/profile/`, {
+        if (!companionValue.includes(',')) {
+            const response = await fetch(`/api/users/${companionValue}/profile/`, {
                 method: 'GET',
                 headers: {
                     'Authorization': `Token ${token}`,
@@ -462,6 +480,9 @@ document.addEventListener('DOMContentLoaded', async function () {
             });
         } else {
             currentCompanion = null;
+            newCompanionElement.addEventListener('click', () => {
+                const ids = companionValue.split(',').map(id => Number(id.trim()));
+            });
         }
 
         // Загрузка сообщений
@@ -499,8 +520,7 @@ document.addEventListener('DOMContentLoaded', async function () {
 
         // Подключение к WebSocket
         const chatSocket = new WebSocket(
-             'wss://'
-//             'ws://'
+             'ws://'
             + window.location.host
             + '/ws/chat/'
             + chatId
