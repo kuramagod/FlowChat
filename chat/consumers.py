@@ -2,6 +2,7 @@ import json
 
 from channels.db import database_sync_to_async
 from channels.generic.websocket import AsyncWebsocketConsumer
+from django.utils import timezone
 
 from .models import ChatModel, MessageModel
 
@@ -67,14 +68,27 @@ class NotificationConsumer(AsyncWebsocketConsumer):
         else:
             self.group_name = f"user_{self.user.id}"
             await self.channel_layer.group_add(self.group_name, self.channel_name)
+            await self.mark_user_online()
             await self.accept()
 
     async def disconnect(self, close_code):
         # Leave room group
         await self.channel_layer.group_discard(self.group_name, self.channel_name)
+        await self.mark_user_offline()
 
     async def new_chat(self, event):
         await self.send(text_data=json.dumps({
             "type": "new_chat",
             "chat_id": event["chat_id"]
         }))
+
+    @database_sync_to_async
+    def mark_user_online(self):
+        self.user.last_active = timezone.now()
+        self.user.is_online = True
+        self.user.save()
+
+    @database_sync_to_async
+    def mark_user_offline(self):
+        self.user.is_online = False
+        self.user.save()
