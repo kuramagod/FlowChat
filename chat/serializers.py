@@ -37,7 +37,7 @@ class ChatSerializer(serializers.ModelSerializer):
         if not obj.messages.exists():
             return None
         last_message = obj.messages.last()
-        return last_message.edited_at.isoformat() if last_message.edited_at else last_message.created_at.isoformat()
+        return last_message.edited_at if last_message.edited_at else last_message.created_at
 
 
 class UserShortSerializer(serializers.ModelSerializer): # Сериализер для подробной информации об авторе.
@@ -48,7 +48,7 @@ class UserShortSerializer(serializers.ModelSerializer): # Сериализер �
 
 class MessageSerializer(serializers.ModelSerializer):
     author = UserShortSerializer(read_only=True)
-    created_at = serializers.ReadOnlyField()
+    created_at = serializers.DateTimeField(format="%Y-%m-%dT%H:%M:%S.%fZ", read_only=True)
 
     class Meta:
         model = MessageModel

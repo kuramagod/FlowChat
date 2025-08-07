@@ -181,18 +181,20 @@ function renderChats(chat, userId) {
     const chatId = chat.id;
     const isGroup = chat.is_group;
     let companionId = null;
+
     if (!isGroup) {
         companionId = chat.members[0] == userId ? chat.members[1] : chat.members[0];
     } else {
-        companionId = chat.members
+        companionId = chat.members;
     }
+
     const chatAvatar = chat.display_photo;
     const title = chat.display_name;
     const lastMessage = chat.last_message;
-    const messageTime = chat.display_time ? formatTime(chat.display_time): '';
+    const messageTime = chat.display_time ? formatTime(chat.display_time) : '';
 
     const chatHTML = `
-        <div class="chat-item" data-id=${chatId} data-title=${title} data-avatar=${chatAvatar} data-companion-id=${companionId}>
+        <div class="chat-item" data-id="${chatId}" data-title="${title}" data-avatar="${chatAvatar}" data-companion-id="${companionId}">
             <img src="${chatAvatar}" class="chat-avatar">
             <div class="chat-info">
                 <span class="chat-name">${title}</span>
@@ -201,8 +203,8 @@ function renderChats(chat, userId) {
             <span class="message-time">${messageTime}</span>
         </div>
     `;
-    chatsList.insertAdjacentHTML("beforeend", chatHTML);
-};
+
+}
 
 document.addEventListener('DOMContentLoaded', async function () {
     // Пользователь
@@ -539,7 +541,7 @@ document.addEventListener('DOMContentLoaded', async function () {
 
         // Подключение к WebSocket
         const chatSocket = new WebSocket(
-             'wss://'
+             'ws://'
             + window.location.host
             + '/ws/chat/'
             + chatId
@@ -547,7 +549,7 @@ document.addEventListener('DOMContentLoaded', async function () {
         );
 
         // Получение отправленных сообщений
-        chatSocket.onmessage = function(e) {
+        chatSocket.onmessage = async function(e) {
             const data = JSON.parse(e.data);
             const isCurrentUser = userId == data.author_id;
 

@@ -55,16 +55,15 @@ class ChatViewSet(viewsets.ModelViewSet):
             chat = ChatModel.objects.create(is_group=False)
             chat.title = f"Чат {current_user.username}|{companion.username}"
             chat.members.add(current_user, companion)
+            channel_layer = get_channel_layer()
 
-        channel_layer = get_channel_layer()
-
-        async_to_sync(channel_layer.group_send)(
-            f"user_{companion.id}",
-            {
-                "type": "new_chat",
-                "chat_id": chat.id
-            }
-        )
+            async_to_sync(channel_layer.group_send)(
+                f"user_{companion.id}",
+                {
+                    "type": "new_chat",
+                    "chat_id": chat.id
+                }
+            )
 
         serializer = self.get_serializer(chat, context={'request': request})
         return Response(serializer.data)
