@@ -2,10 +2,12 @@ import json
 
 from channels.db import database_sync_to_async
 from channels.generic.websocket import AsyncWebsocketConsumer
+from django.contrib.auth import get_user_model
 from django.utils import timezone
 
 from .models import ChatModel, MessageModel
 
+User = get_user_model()
 
 class ChatConsumer(AsyncWebsocketConsumer):
     async def connect(self):
@@ -86,9 +88,12 @@ class NotificationConsumer(AsyncWebsocketConsumer):
     def mark_user_online(self):
         self.user.last_active = timezone.now()
         self.user.is_online = True
-        self.user.save()
+        User.objects.filter(id=self.user.id).update(
+            last_active=timezone.now(),
+            is_online=True
+        )
 
     @database_sync_to_async
     def mark_user_offline(self):
         self.user.is_online = False
-        self.user.save()
+        User.objects.filter(id=self.user.id).update(is_online=False)
