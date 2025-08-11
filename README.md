@@ -207,7 +207,7 @@ curl -X POST https://example.com/api/chats/ \
 #### Ответ:
 
 ```json
-]
+[
     {
         "created_at": "2025-08-06T15:35:31.062606Z",
         "display_name": "Marina",
@@ -275,7 +275,7 @@ curl -X POST https://example.com/api/chats/get_or_create/ \
 #### 📌 GET `/api/chats/{pk}/get_messages/` — История сообщений
 
 ```json
-]
+[
     {
         "author": {
             "avatar": "/media/avatars/default_Dmx5yaR.jpg",
