@@ -389,11 +389,11 @@ curl -X PATCH https://example.com/api/users/{pk}/ \
 ## ⚙️ Установка и запуск
 ```bash
 # Клонировать репозиторий
-git clone https://github.com/username/flowchat.git
-cd flowchat
+git clone https://github.com/kuramagod/FlowChat.git
+cd FLowChat
 
 # Создать и активировать виртуальное окружение
-python -m venv venv
+python -m venv .venv
 source venv/bin/activate   # для Linux/Mac
 venv\Scripts\activate      # для Windows
 
